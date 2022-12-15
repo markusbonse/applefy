@@ -33,6 +33,9 @@ setup(
         "scipy>=1.7",
         "tqdm",
         "h5py"],
+    extras_require={
+        "fast_sort": ["parallel_sort", ],
+    },
     packages=["applefy"],
     zip_safe=False,
 )
