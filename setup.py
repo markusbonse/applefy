@@ -34,6 +34,7 @@ setup(
         "tqdm",
         "h5py"],
     extras_require={
+        "dev": ["furo", "sphinx"],
         "fast_sort": ["parallel_sort", ],
     },
     packages=["applefy"],
