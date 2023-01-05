@@ -1,12 +1,32 @@
 """
 Simple helper functions to handle data
 """
+import os
 import h5py
 from astropy.io import fits
 import numpy as np
 import time
 import datetime
 from copy import deepcopy
+
+
+def read_apples_with_apples_root():
+    """
+    A simple function which reads in the APPLES_ROOT_DIR specified by the user.
+    This function is needed to reproduce the results of the Apples with Apples
+    paper. Raises an error if the directory does not exist.
+
+    Returns:
+        The path to the root directory
+    """
+    root_dir = os.getenv('APPLES_ROOT_DIR')
+
+    if not os.path.isdir(root_dir):
+        raise IOError("The path in APPLES_ROOT_DIR does not exist. Make sure "
+                      "to download the data an specify its location.")
+
+    print("Data in the APPLES_ROOT_DIR found. Location: " + str(root_dir))
+    return root_dir
 
 
 def cut_and_stack(psf_template: np.array,
