@@ -9,3 +9,4 @@ Apples with Apples
 
    paper_experiments/01_What_is_a_detection.ipynb
    paper_experiments/02_Rotation.ipynb
+   paper_experiments/03_Independence.ipynb
