@@ -1,3 +1,0 @@
-# Detections
-
-test page

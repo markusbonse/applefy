@@ -1,3 +1,0 @@
-# Gaussianity
-
-test page
