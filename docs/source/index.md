@@ -31,7 +31,7 @@ It contains all the code for the following research paper (see also ):
 ```
 
 ```{toctree}
-:maxdepth: 2
+:maxdepth: 3
 :hidden:
 :caption: Package
 

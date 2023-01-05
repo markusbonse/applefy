@@ -32,6 +32,9 @@ release = '0.0.1'
 # ones.
 extensions = ['sphinx.ext.napoleon',
               'sphinx.ext.autodoc',
+              'nbsphinx',
+              'sphinx_copybutton',
+              'sphinx_gallery.load_style',
               'myst_parser']
 
 # The master toctree document.
@@ -64,4 +67,9 @@ html_theme_options = {
     "light_logo": "applefy_logo.pdf",
     "dark_logo": "applefy_logo.pdf",
     "sidebar_hide_name": True,
+    "light_css_variables": {
+        "color-brand-primary": "#4e4c4d",
+        "color-sidebar-caption-text": "FFFFFF",
+        "color-brand-content": "#7C4DFF",
+    },
 }
