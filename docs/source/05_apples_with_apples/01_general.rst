@@ -1,0 +1,11 @@
+Apples with Apples
+====================
+.. toctree::
+   :hidden:
+
+   02_paper_data.md
+
+.. nbgallery::
+
+   paper_experiments/01_What_is_a_detection.ipynb
+   paper_experiments/02_Rotation.ipynb

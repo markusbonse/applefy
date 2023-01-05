@@ -39,7 +39,7 @@ setup(
                 "myst-parser",
                 "nbsphinx",
                 "sphinx-copybutton",
-                "sphinx-gallery",
+                "sphinx-gallery<=0.10",
                 "IPython"],
         "fast_sort": ["parallel_sort", ],
     },

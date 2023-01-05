@@ -37,6 +37,11 @@ extensions = ['sphinx.ext.napoleon',
               'sphinx_gallery.load_style',
               'myst_parser']
 
+# Gallery style
+sphinx_gallery_conf = {
+    'thumbnail_size': (50, 50)
+}
+
 # The master toctree document.
 master_doc = 'index'
 
