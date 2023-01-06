@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'applefy'
-copyright = '2022, Markus Johannes Bonse'
+copyright = '2023, Markus Johannes Bonse'
 author = 'Markus Johannes Bonse'
 
 # The full version, including alpha/beta/rc tags
