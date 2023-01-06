@@ -40,7 +40,10 @@ setup(
                 "nbsphinx",
                 "sphinx-copybutton",
                 "sphinx-gallery<=0.10",
-                "IPython"],
+                # needed for syntax highlighting in jupyter notebooks
+                "IPython",
+                # spell checking in jupyter notebooks
+                "jupyter_contrib_nbextensions"],
         "fast_sort": ["parallel_sort", ],
     },
     packages=["applefy"],
