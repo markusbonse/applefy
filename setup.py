@@ -32,7 +32,8 @@ setup(
         "scikit-learn",
         "scipy>=1.7",
         "tqdm",
-        "h5py"],
+        "h5py",
+        "ipywidgets"],
     extras_require={
         "dev": ["furo",
                 "sphinx>=2.1",
