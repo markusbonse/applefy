@@ -12,3 +12,4 @@ Apples with Apples
    paper_experiments/03_Independence.ipynb
    paper_experiments/04_Residual_noise_statistics.ipynb
    paper_experiments/05_Parametric_BS_Procedure.ipynb
+   paper_experiments/06_Convergence_distributions.ipynb
