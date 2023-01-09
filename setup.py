@@ -45,7 +45,7 @@ setup(
                 "IPython",
                 # spell checking in jupyter notebooks
                 "jupyter_contrib_nbextensions"],
-        "fast_sort": ["parallel_sort", ],
+        "fast_sort": ["parallel_sort==0.0.3", ],
         "plotting": ["seaborn", "matplotlib"],
     },
     packages=["applefy"],

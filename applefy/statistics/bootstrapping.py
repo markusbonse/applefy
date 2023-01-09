@@ -9,7 +9,7 @@ import multiprocessing
 from abc import abstractmethod
 
 try:
-    from parallel_sort import sort_inplace as sort_fast
+    from parallel_sort import parallel_sort_inplace as sort_fast
     found_fast_sort = True
 except ImportError:
     sort_fast = np.sort
