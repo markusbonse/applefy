@@ -3,7 +3,6 @@ Functions and Tools to generate fake planet data sets as input for any
 post-processing method.
 """
 import numpy as np
-import json
 import os
 from scipy.ndimage import shift
 
@@ -37,7 +36,7 @@ def add_fake_planets(input_stack: np.array,
                      parang: np.array,
                      dit_science: float,
                      dit_psf_template: float,
-                     config_file: str,
+                     experiment_config: dict,
                      scaling_factor=1):
     """
     Function which adds fake planets to ADI data based on a contrast map
@@ -52,22 +51,20 @@ def add_fake_planets(input_stack: np.array,
         parang: Parallactic angles 1D numpy array (rad)
         dit_science: integration time used for the science frames
         dit_psf_template: integration time used for the psf template
-        config_file: contrast map configuration file (str)
+        experiment_config: configuration dict containing the information about
+            where and how to add the fake planet
         scaling_factor: additional scaling factor e.g. needed for ND filter
             in M-band
 
     Returns: the input stack with the fake planet (3D numpy array)
     """
 
-    with open(config_file) as json_file:
-        config = json.load(json_file)
-
     # The IDX 0 case with no fake planets
-    if "planet_position" not in config:
+    if "planet_position" not in experiment_config:
         return input_stack
 
     print("Adding fake planet...")
-    planet_position = config["planet_position"]
+    planet_position = experiment_config["planet_position"]
 
     # Pad or cut the template depending on the size of the science frames
     if psf_template.shape[-1] > input_stack.shape[-1]:
@@ -90,8 +87,8 @@ def add_fake_planets(input_stack: np.array,
     # Code inspired by PynPoint (Stolker et al 2019)
 
     # Scale the PSF to get a fake planet with the correct brightness
-    flux_ratio = config["flux_ratio"]
-    psf = padded_psf[np.newaxis, :, :] * integration_time_factor * flux_ratio
+    flux_ratio = experiment_config["flux_ratio"]
+    psf = padded_psf * integration_time_factor * flux_ratio
 
     # Calculate the positions of the fake planet a long time
     fake_planet_sep = planet_position[2]
@@ -102,13 +99,11 @@ def add_fake_planets(input_stack: np.array,
     # Shift the fake planet to the right position in the image
     im_shift = np.zeros(input_stack.shape)
 
-    # TODO check if psf[0, ] is needed
     for i in range(input_stack.shape[0]):
-        if psf.shape[0] == 1:
-            im_shift[i] = shift(
-                psf[0, ],
-                (float(y_shift[i]), float(x_shift[i])),
-                order=5,
-                mode="spline")
+        im_shift[i] = shift(
+            psf,
+            (float(y_shift[i]), float(x_shift[i])),
+            order=5,
+            mode="constant")
 
     return input_stack + im_shift
