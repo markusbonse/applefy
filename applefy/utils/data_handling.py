@@ -69,18 +69,12 @@ def load_adi_data(hdf5_dataset: str,
     return data, angles, psf_template_data
 
 
-def save_as_fits(data,
-                 save_dir,
-                 file_name,
-                 add_time=False):
+def save_as_fits(data, file_name):
+
     hdu = fits.PrimaryHDU(data)
     hdul = fits.HDUList([hdu])
 
-    st = ""
-    if add_time:
-        ts = time.time()
-        st = "_" + datetime.datetime.fromtimestamp(ts).strftime('%m-%d %H:%M:%S')
-    hdul.writeto(save_dir + "/" + file_name + st + ".fits")
+    hdul.writeto(file_name)
 
 
 def open_fits(file_name):
