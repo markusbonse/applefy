@@ -63,7 +63,6 @@ def add_fake_planets(input_stack: np.array,
     if "planet_position" not in experiment_config:
         return input_stack
 
-    print("Adding fake planet...")
     planet_position = experiment_config["planet_position"]
 
     # Pad or cut the template depending on the size of the science frames

@@ -66,7 +66,7 @@ def calculate_planet_positions(test_img,
     return planet_positions
 
 
-def generate_experiment_config_files(flux_ratios: list,
+def generate_fake_planet_experiments(flux_ratios: list,
                                      planet_positions: dict):
     """
         Function which creates config files for the contrast map. Each file
@@ -123,10 +123,38 @@ def generate_experiment_config_files(flux_ratios: list,
     return all_config_files
 
 
+def save_experiment_configs(
+        experimental_setups,
+        experiment_config_dir,
+        overwrite=False):
+
+    # check if the config dir is empty
+    if any([i.suffix == ".json" for i in experiment_config_dir.iterdir()]):
+        if not overwrite:
+            raise FileExistsError(
+                "The directory \"" + str(experiment_config_dir) + "\" already "
+                "contains config files. Delete them if you want to create a "
+                "new experiment setup or use overwrite=True to automatically "
+                " remove them.")
+
+        print("Overwriting existing config files.")
+        for tmp_file in experiment_config_dir.iterdir():
+            if tmp_file.suffix == ".json":
+                tmp_file.unlink()
+
+    for tmp_id, tmp_config in experimental_setups.items():
+        with open(os.path.join(
+                experiment_config_dir,
+                "exp_ID_" + str(tmp_id) + ".json"),
+                'w') as f:
+            json.dump(tmp_config,
+                      f, indent=4)
+
+
 def create_and_save_configs(test_img,
                             psf_fwhm_radius,
                             flux_ratios: list,
-                            experiment_root_dir,
+                            experiment_config_dir,
                             num_planets=6,
                             separations=None):
     """
@@ -137,7 +165,7 @@ def create_and_save_configs(test_img,
         test_img: A 2D test image [np.array]
         psf_fwhm_radius: The radius of the PSF-FWHM [pixel].
         flux_ratios: List of flux_ratios to be studied [float,]
-        experiment_root_dir: Destination where config files are stored
+        experiment_config_dir: Destination where config files are stored
         num_planets: The number of planets to be inserted (int). Has to be
             between 1 (minimum) and 6 (maximum). More planets provide more
             accuracy of the results.
@@ -150,18 +178,16 @@ def create_and_save_configs(test_img,
 
     """
 
-    planet_positions = calculate_planet_positions(test_img,
-                                                  psf_fwhm_radius,
-                                                  num_planets=num_planets,
-                                                  separations=separations)
+    planet_positions = calculate_planet_positions(
+        test_img,
+        psf_fwhm_radius,
+        num_planets=num_planets,
+        separations=separations)
 
-    all_config_files = generate_experiment_config_files(flux_ratios,
-                                                        planet_positions)
+    experimental_setups = generate_fake_planet_experiments(
+        flux_ratios,
+        planet_positions)
 
-    for tmp_id, tmp_config in all_config_files.items():
-        with open(os.path.join(
-                experiment_root_dir,
-                "exp_ID_" + str(tmp_id) + ".json"),
-                'w') as f:
-            json.dump(tmp_config,
-                      f, indent=4)
+    save_experiment_configs(
+        experimental_setups=experimental_setups,
+        experiment_root_dir=experiment_config_dir)
