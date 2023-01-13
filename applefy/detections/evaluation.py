@@ -24,7 +24,69 @@ from applefy.statistics.general import TestInterface, fpf_2_gaussian_sigma
 # -------- Functions needed to read in data and evaluate the results -----------
 ################################################################################
 
-def read_and_sort_results(results):
+
+def read_and_sort_results(result_files):
+    """
+    Function needed to read in the residuals and extract the meta-information
+    from the .json config files.
+
+    Args:
+        result_files: List which contains the path to the residuals and corresponding
+        config files. List items have to be structured like:
+            (path to config file, path to the residual)
+
+    Returns: A tuple containing elements (fp_residual, planet_dict, idx_table):
+        - fp_residual: A 2D numpy array of the residual without any fake planets
+        - planet_dict: A dictionary with keys = Experiment ID. For every ID a
+            list is given which contains tuples of the residual and the position
+            of the corresponding fake planet. E.g.:
+
+            planet_dict[1] = [(res_planet_a, pos_planet_a),
+                              (res_planet_b, pos_planet_b),
+                              (res_planet_c, pos_planet_c),
+                              (res_planet_d, pos_planet_d),
+                              (res_planet_e, pos_planet_e),
+                              (res_planet_f, pos_planet_f)]
+
+        - idx_table: Pandas lookup table which links separation and flux_ratio
+            to its experiment ID used by planet_dict
+    """
+
+    # 1. Load the results
+    load_results = read_results(result_files)
+
+    # 2. Sort the results
+    return sort_results(load_results)
+
+
+def read_results(result_files):
+    load_results = []
+
+    for tmp_input in result_files:
+        tmp_config_path, tmp_residual_path = tmp_input
+
+        # 1.) load the residual, ignore non-existing files
+        if not os.path.isfile(tmp_residual_path):
+            warnings.warn("File " + str(tmp_residual_path) + "not found")
+            continue
+
+        if not os.path.isfile(tmp_config_path):
+            warnings.warn("File " + str(tmp_config_path) + "not found")
+            continue
+
+        tmp_residual = np.squeeze(open_fits(tmp_residual_path))
+
+        # 1.1) load the config file
+        with open(tmp_config_path) as json_file:
+            tmp_setup_config = json.load(json_file)
+
+        load_results.append(tmp_setup_config, tmp_residual)
+
+    return load_results
+
+
+def sort_results(results):
+    # TODO change documentation
     """
     Function needed to read in the residuals and extract the meta-information
     from the .json config files.
@@ -61,22 +123,8 @@ def read_and_sort_results(results):
     result_collection = dict()
 
     for tmp_input in results:
-        tmp_config_path, tmp_residual_path = tmp_input
-
-        # 1.) load the residual, ignore non-existing files
-        if not os.path.isfile(tmp_residual_path):
-            warnings.warn("File " + str(tmp_residual_path) + "not found")
-            continue
-
-        if not os.path.isfile(tmp_config_path):
-            warnings.warn("File " + str(tmp_config_path) + "not found")
-            continue
-
-        tmp_residual = np.squeeze(open_fits(tmp_residual_path))
-
-        # 1.1) load the config file
-        with open(tmp_config_path) as json_file:
-            tmp_setup_config = json.load(json_file)
+        # 1.) Unpack the current result
+        tmp_setup_config, tmp_residual = tmp_input
 
         # 2.) Find out the experiment id
         tmp_exp_id = tmp_setup_config['exp_id']
