@@ -18,7 +18,9 @@ class DataReductionInterface(ABC):
     def __call__(
             self,
             stack_with_fake_planet,
-            parang_rad):
+            parang_rad,
+            psf_template,
+            exp_id):
         pass
 
 
@@ -181,7 +183,9 @@ class Contrast:
         # 3.) Compute the residuals
         residuals = algorithm_function(
             stack_with_fake_planet,
-            self.parang)
+            self.parang,
+            self.psf_template,
+            exp_id)
 
         return exp_id, residuals
 
