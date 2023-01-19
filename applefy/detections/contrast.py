@@ -55,6 +55,7 @@ class Contrast:
 
         # Members which are created later
         self.experimental_setups = None
+        self.results_dict = None
 
     @classmethod
     def create_from_checkpoint_dir(
@@ -223,16 +224,18 @@ class Contrast:
                 i) for i in self.experimental_setups.keys())
         tmp_results_dict = dict(results)
 
-        # 2. Invert the dict structure. We want the method names as keys for
-        # the results dict
-        results_dict = dict()
+        # 2. Prepare the results for the ContrastResult
+        # Invert the dict structure. We want the method names as keys.
+        # For each method we want a list containing tuples with the experiment
+        # setup and residual
+        self.results_dict = dict()
 
         for fake_planet_id, value in tmp_results_dict.items():
-            for method_key, method_values in value.items():
+            for method_key, tmp_residual in value.items():
 
-                if method_key not in results_dict:
-                    results_dict[method_key] = dict()
+                if method_key not in self.results_dict:
+                    self.results_dict[method_key] = list()
 
-                results_dict[method_key][fake_planet_id] = method_values
-
-        return results_dict
+                tmp_config = self.experimental_setups[fake_planet_id]
+                self.results_dict[method_key].append(
+                    (tmp_config, tmp_residual))
