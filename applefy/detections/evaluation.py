@@ -315,7 +315,7 @@ def compute_throughput_table(planet_dict,
     throughput_table = idx_table.copy()
 
     for separation, row in idx_table.iterrows():
-        for tmp_flux_ratio, tmp_idx in row.iteritems():
+        for tmp_flux_ratio, tmp_idx in row.items():
 
             tmp_fake_planet_results = planet_dict[tmp_idx]
 
@@ -467,7 +467,10 @@ def compute_contrast_curve(throughput_list: pd.DataFrame,
                                    columns=["separation", "contrast",
                                             "rotation_idx"])
 
-    contrast_curves = contrast_curves.pivot("rotation_idx", "separation")
+    contrast_curves = contrast_curves.pivot(
+        index="rotation_idx",
+        columns="separation")
+
     median_contrast = np.median(contrast_curves, axis=0)
     contrast_mad = stats.median_abs_deviation(contrast_curves, axis=0)
 
