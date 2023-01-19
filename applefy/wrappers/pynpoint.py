@@ -13,7 +13,7 @@ class SimplePCAPynPoint(DataReductionInterface):
         self.num_pca = num_pca
 
     def get_method_keys(self):
-        return ["PCA (" + str(self.num_pca) + " components)", ]
+        return ["PCA (" + str(self.num_pca).zfill(3) + " components)", ]
 
     def __call__(
             self,
@@ -31,7 +31,7 @@ class SimplePCAPynPoint(DataReductionInterface):
         residual_image = np.mean(residual_stack_fake, axis=0)
 
         result_dict = dict()
-        result_dict["PCA (" + str(self.num_pca) + " components)"] = \
+        result_dict["PCA (" + str(self.num_pca).zfill(3) + " components)"] = \
             residual_image
 
         return result_dict
@@ -50,7 +50,7 @@ class MultiComponentPCAPynPoint(DataReductionInterface):
         self.num_cpus_pynpoint = num_cpus_pynpoint
 
     def get_method_keys(self):
-        keys = ["PCA (" + str(num_pcas) + " components)"
+        keys = ["PCA (" + str(num_pcas).zfill(3) + " components)"
                 for num_pcas in self.num_pcas]
 
         return keys
