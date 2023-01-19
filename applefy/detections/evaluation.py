@@ -754,7 +754,7 @@ def compute_contrast_from_map(contrast_map_fpf,
 # ----------------------- Evaluation wrapped into classes ----------------------
 ################################################################################
 
-class ContrastResults(object):
+class ContrastResult(object):
     """
     Wrapper class for the evaluation and organization of residuals from one
     method (e.g. pca with 10 components). Supports both contrast curves and
