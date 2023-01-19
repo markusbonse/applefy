@@ -457,7 +457,12 @@ def compute_contrast_curve(throughput_list: pd.DataFrame,
                 tmp_noise_sample,
                 tmp_fpf)
 
-            flux_throughput_corr = residual_flux_needed / tmp_throughput
+            # it is possible that the tmp_throughput is almost 0 which can lead
+            # to invalid division by zero (numerical stability)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                flux_throughput_corr = residual_flux_needed / tmp_throughput
+
             tmp_contrast = flux_throughput_corr / stellar_flux
 
             contrast_values.append((tmp_separation, tmp_contrast, rot_idx))
@@ -472,7 +477,11 @@ def compute_contrast_curve(throughput_list: pd.DataFrame,
         columns="separation")
 
     median_contrast = np.median(contrast_curves, axis=0)
-    contrast_mad = stats.median_abs_deviation(contrast_curves, axis=0)
+    # it is possible that the contrast_curves contains inf values due to very
+    # small throughput values
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        contrast_mad = stats.median_abs_deviation(contrast_curves, axis=0)
 
     return median_contrast, contrast_mad, contrast_curves
 
@@ -883,14 +892,25 @@ class ContrastResult(object):
             photometry_mode_noise=self.m_noise_mode,
             num_rot_iter=num_rot_iterations)
 
+        # wrap contrast curves into pandas arrays
+        median_contrast_curve = pd.DataFrame(
+            median_contrast_curve,
+            index=self.m_idx_table.index,
+            columns=["contrast", ])
+
+        contrast_error = pd.DataFrame(
+            contrast_error,
+            index=self.m_idx_table.index,
+            columns=["MAD of contrast", ])
+
         return median_contrast_curve, contrast_error
 
     def compute_contrast_map(self,
                              test_statistic,
                              num_cores=1,
-                             num_rot_iter=20,
+                             num_rot_iterations=20,
                              safety_margin=1.0,
-                             contrast_curve_fpf=None):
+                             confidence_level_fpf=None):
         """
         Function which calculates the contrast map i.e. how confident are we,
         that a certain detection is possible at separations s and flux_ratio f.
@@ -904,11 +924,11 @@ class ContrastResult(object):
                 apelfei.statistics.parametric.TTest.
             num_cores: Number of parallel processes used to calculate the
                 contrast map.
-            num_rot_iter: Number of tests performed with different noise
+            num_rot_iterations: Number of tests performed with different noise
                 positions.
             safety_margin: Area around the planet which is excluded from the
                 noise. This can be useful in case the planet has negative wings.
-            contrast_curve_fpf: If set to a float value the output contrast
+            confidence_level_fpf: If set to a float value the output contrast
                 map will be interpolated and transformed into a contrast curve.
                 if None only the contrast map is returned.
 
@@ -927,13 +947,13 @@ class ContrastResult(object):
             photometry_mode_planet=self.m_planet_mode,
             photometry_mode_noise=self.m_noise_mode,
             num_cores=num_cores,
-            num_rot_iter=num_rot_iter,
+            num_rot_iter=num_rot_iterations,
             safety_margin=safety_margin)
 
-        if isinstance(contrast_curve_fpf, (float, np.floating)):
+        if isinstance(confidence_level_fpf, (float, np.floating)):
             # compute the contrast curve
             contrast_curve = compute_contrast_from_map(contrast_map,
-                                                       contrast_curve_fpf)
+                                                       confidence_level_fpf)
 
             return contrast_map, contrast_curve
 
