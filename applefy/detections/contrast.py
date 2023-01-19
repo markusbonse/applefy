@@ -6,6 +6,7 @@ from applefy.utils.data_handling import save_as_fits, open_fits
 from applefy.detections.preparation import calculate_planet_positions, \
     generate_fake_planet_experiments, save_experiment_configs
 from applefy.detections.execution import add_fake_planets
+from applefy.detections.evaluation import estimate_stellar_flux, ContrastResult
 
 
 class DataReductionInterface(ABC):
@@ -56,6 +57,8 @@ class Contrast:
         # Members which are created later
         self.experimental_setups = None
         self.results_dict = None
+        self.stellar_flux = None
+        self.contrast_results = None
 
     @classmethod
     def create_from_checkpoint_dir(
@@ -239,3 +242,35 @@ class Contrast:
                 tmp_config = self.experimental_setups[fake_planet_id]
                 self.results_dict[method_key].append(
                     (tmp_config, tmp_residual))
+
+    def prepare_contrast_results(
+            self,
+            photometry_mode_planet,
+            photometry_mode_noise,
+            scaling_factor=1.):
+
+        # 0.) Check if run_fake_planet_experiments was executed before
+        if self.results_dict is None:
+            raise RuntimeError(
+                "prepare_contrast_results requires that "
+                "run_fake_planet_experiments was executed before.")
+
+        # 1.) Estimate the stellar flux
+        self.stellar_flux = estimate_stellar_flux(
+            psf_template=self.psf_template,
+            dit_science=self.dit_science,
+            dit_psf_template=self.dit_psf_template,
+            photometry_mode=photometry_mode_planet,
+            scaling_factor=scaling_factor)
+
+        # 2.) For each method setup create one ContrastResult
+        self.contrast_results = dict()
+        for tmp_method_name, method_results in self.results_dict.items():
+            tmp_contrast_result = ContrastResult(
+                model_results_in=method_results,
+                stellar_flux=self.stellar_flux,
+                planet_photometry_mode=photometry_mode_planet,
+                noise_photometry_mode=photometry_mode_noise,
+                psf_fwhm_radius=self.psf_fwhm_radius)
+
+            self.contrast_results[tmp_method_name] = tmp_contrast_result
