@@ -356,12 +356,12 @@ class Contrast:
             print("Computing contrast curve for " + str(key))
 
             tmp_contrast_map, tmp_contrast_map_curve = \
-                tmp_result.compute_contrast_map(
+                tmp_result.compute_contrast_grid(
                     test_statistic=test_statistic,
                     num_cores=num_cores,
                     num_rot_iterations=num_rot_iterations,
                     safety_margin=safety_margin,
-                    contrast_curve_fpf=confidence_level_fpf)
+                    confidence_level_fpf=confidence_level_fpf)
 
             contrast_curves[key] = tmp_contrast_map_curve["contrast"].values
             contrast_grids[key] = tmp_contrast_map

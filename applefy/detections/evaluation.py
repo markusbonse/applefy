@@ -905,12 +905,12 @@ class ContrastResult(object):
 
         return median_contrast_curve, contrast_error
 
-    def compute_contrast_map(self,
-                             test_statistic,
-                             num_cores=1,
-                             num_rot_iterations=20,
-                             safety_margin=1.0,
-                             confidence_level_fpf=None):
+    def compute_contrast_grid(self,
+                              test_statistic,
+                              num_cores=1,
+                              num_rot_iterations=20,
+                              safety_margin=1.0,
+                              confidence_level_fpf=None):
         """
         Function which calculates the contrast map i.e. how confident are we,
         that a certain detection is possible at separations s and flux_ratio f.
