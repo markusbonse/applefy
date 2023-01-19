@@ -1,4 +1,6 @@
 from pathlib import Path
+import pandas as pd
+import numpy as np
 from joblib import Parallel, delayed
 from abc import ABC, abstractmethod
 
@@ -274,3 +276,102 @@ class Contrast:
                 psf_fwhm_radius=self.psf_fwhm_radius)
 
             self.contrast_results[tmp_method_name] = tmp_contrast_result
+
+    def _get_result_table_index(self, pixel_scale=None):
+
+        example_contrast_result = next(iter(self.contrast_results.values()))
+        separations_lambda_d = \
+            [i / self.psf_fwhm_radius * 2
+             for i in example_contrast_result.m_idx_table.index]
+
+        # create the index in lambda / D and arcsec
+        if pixel_scale is None:
+            separation_index = pd.Index(
+                separations_lambda_d,
+                name=r"separation [$\lambda/D$]")
+
+        else:
+            separations_arcsec = \
+                [i * pixel_scale
+                 for i in example_contrast_result.m_idx_table.index]
+
+            separation_index = pd.MultiIndex.from_tuples(
+                list(zip(separations_lambda_d, separations_arcsec)),
+                names=[r"separation [$\lambda/D$]",
+                       "separation [arcsec]"])
+
+        return separation_index
+
+    def compute_analytic_contrast_curves(
+            self,
+            test_statistic,
+            confidence_level_fpf,
+            num_rot_iterations=20,
+            pixel_scale=None):
+
+        # 1.) Compute contrast curves for all method configurations
+        contrast_curves = dict()
+        contrast_curves_mad = dict()
+
+        for key, tmp_result in self.contrast_results.items():
+            print("Computing contrast curve for " + str(key))
+            tmp_contrast_curve, tmp_contrast_curve_error = \
+                tmp_result.compute_contrast_curve(
+                    test_statistic=test_statistic,
+                    num_rot_iterations=num_rot_iterations,
+                    confidence_level_fpf=confidence_level_fpf)
+
+            contrast_curves[key] = tmp_contrast_curve["contrast"].values
+            contrast_curves_mad[key] = \
+                tmp_contrast_curve_error["MAD of contrast"].values
+
+        # 2.) Merge the results into two pandas table
+        separation_index = self._get_result_table_index(pixel_scale)
+
+        # create the final tables
+        pd_contrast_curves = pd.DataFrame(
+            contrast_curves, index=separation_index).replace(
+            [np.inf, -np.inf], np.inf)
+
+        pd_contrast_curves_mad = pd.DataFrame(
+            contrast_curves_mad, index=separation_index).replace(
+            [np.inf, -np.inf], np.inf)
+
+        return pd_contrast_curves, pd_contrast_curves_mad
+
+    def compute_contrast_grids(
+            self,
+            test_statistic,
+            num_cores,
+            confidence_level_fpf,
+            safety_margin=1.0,
+            num_rot_iterations=20,
+            pixel_scale=None):
+
+        # 1.) Compute contrast grids for all method configurations
+        contrast_curves = dict()
+        contrast_grids = dict()
+
+        for key, tmp_result in self.contrast_results.items():
+            print("Computing contrast curve for " + str(key))
+
+            tmp_contrast_map, tmp_contrast_map_curve = \
+                tmp_result.compute_contrast_map(
+                    test_statistic=test_statistic,
+                    num_cores=num_cores,
+                    num_rot_iterations=num_rot_iterations,
+                    safety_margin=safety_margin,
+                    contrast_curve_fpf=confidence_level_fpf)
+
+            contrast_curves[key] = tmp_contrast_map_curve["contrast"].values
+            contrast_grids[key] = tmp_contrast_map
+
+        # 2.) merge the results of the contrast_curves into one nice table
+        separation_index = self._get_result_table_index(pixel_scale)
+
+        # create the final tables
+        pd_contrast_curves = pd.DataFrame(
+            contrast_curves, index=separation_index).replace(
+            [np.inf, -np.inf], np.inf)
+
+        return pd_contrast_curves, contrast_grids
