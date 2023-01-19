@@ -160,15 +160,16 @@ class Contrast:
 
         # 1.) Check if the expected residuals already exist
         if self.residual_dir is not None:
-            residuals_exist = self._check_residuals_exist_and_restore(
+            restored_residuals = self._check_residuals_exist_and_restore(
                 algorithm_function,
                 exp_id)
 
-            if residuals_exist:
+            # if yes use the restored_residuals
+            if restored_residuals:
                 print("Found all residuals for experiment ID: " + exp_id)
-                return exp_id, residuals_exist
+                return exp_id, restored_residuals
 
-            # if not run the fake planet experiment
+        # if not run the fake planet experiment
 
         # 2.) create the fake planet stack
         stack_with_fake_planet = add_fake_planets(
@@ -186,6 +187,25 @@ class Contrast:
             self.parang,
             self.psf_template,
             exp_id)
+
+        # 4.) Save the result if needed
+        if self.residual_dir is None:
+            return exp_id, residuals
+
+        # for each method and residual pair
+        for tmp_method_key, tmp_residual in residuals.items():
+
+            # Create a subdirectory for the method if it does not exist
+            tmp_sub_dir = self.residual_dir / tmp_method_key
+            if not tmp_sub_dir.is_dir():
+                tmp_sub_dir.mkdir()
+
+            # Save the residual as a .fits file
+            exp_name = "residual_ID_" + exp_id + ".fits"
+            tmp_file = tmp_sub_dir / exp_name
+
+            if not tmp_file.is_file():
+                save_as_fits(tmp_residual, tmp_file)
 
         return exp_id, residuals
 
@@ -214,26 +234,5 @@ class Contrast:
                     results_dict[method_key] = dict()
 
                 results_dict[method_key][fake_planet_id] = method_values
-
-        # 3. Save the results if needed
-        if self.residual_dir is None:
-            return results_dict
-
-        # Save the results
-        for tmp_method_key in results_dict.keys():
-            tmp_sub_dir = self.residual_dir / tmp_method_key
-
-            # Create a subdirectory for each output of the function
-            if not tmp_sub_dir.is_dir():
-                tmp_sub_dir.mkdir()
-
-            # Save the residuals if they do not exist already
-            for fake_planet_id, tmp_residual in \
-                    results_dict[tmp_method_key].items():
-                exp_name = "residual_ID_" + fake_planet_id + ".fits"
-
-                tmp_file = tmp_sub_dir / exp_name
-                if not tmp_file.is_file():
-                    save_as_fits(tmp_residual, tmp_file)
 
         return results_dict

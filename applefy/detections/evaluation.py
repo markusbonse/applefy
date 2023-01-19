@@ -767,6 +767,7 @@ class ContrastResults(object):
                  planet_photometry_mode: AperturePhotometryMode,
                  noise_photometry_mode: AperturePhotometryMode,
                  psf_fwhm_radius):
+        # TODO change documentation
         """
         Constructor of the class. This function will read in all residuals and
         compute the throughput table.
@@ -802,7 +803,7 @@ class ContrastResults(object):
         self.m_noise_mode = noise_photometry_mode
 
         # Read in the results
-        read_in = read_and_sort_results(model_results_in)
+        read_in = sort_results(model_results_in)
         self.m_fp_residual, self.m_planet_dict, self.m_idx_table = read_in
 
         # In case throughput values are computed later we initialize the member
