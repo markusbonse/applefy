@@ -774,7 +774,7 @@ class ContrastResult(object):
     """
 
     def __init__(self,
-                 model_results_in,
+                 model_results,
                  stellar_flux,
                  planet_photometry_mode: AperturePhotometryMode,
                  noise_photometry_mode: AperturePhotometryMode,
@@ -785,7 +785,7 @@ class ContrastResult(object):
         compute the throughput table.
 
         Args:
-            model_results_in: List which contains the path to the residuals and
+            model_results: List which contains the path to the residuals and
                 corresponding config files. List items have to be structured
                 like: (path to config file, path to the residual)
             stellar_flux: The stellar flux measured with estimate_stellar_flux.
@@ -815,7 +815,7 @@ class ContrastResult(object):
         self.noise_mode = noise_photometry_mode
 
         # Read in the results
-        read_in = sort_results(model_results_in)
+        read_in = sort_results(model_results)
         self.fp_residual, self.planet_dict, self.idx_table = read_in
 
         # In case throughput values are computed later we initialize the member

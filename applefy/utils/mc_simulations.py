@@ -8,7 +8,7 @@ from multiprocessing import Pool, shared_memory
 
 def draw_noise(distribution,
                num_draws,
-               num_noise_observations_in,
+               num_noise_observations,
                loc_noise,
                scale_noise):
     """
@@ -17,7 +17,7 @@ def draw_noise(distribution,
     Args:
         distribution: type of the noise: gaussian / laplace
         num_draws: number of noise samples
-        num_noise_observations_in: sample size i.e. number of noise values
+        num_noise_observations: sample size i.e. number of noise values
             at a given separation
         loc_noise: The location of the noise i.e. the center of the pdf.
         scale_noise: The width of the distribution. In case of gaussian noise
@@ -28,16 +28,16 @@ def draw_noise(distribution,
     """
     if distribution == "gaussian":
         return np.random.normal(loc=loc_noise, scale=scale_noise,
-                                size=(num_draws, num_noise_observations_in))
+                                size=(num_draws, num_noise_observations))
     else:
         return np.random.laplace(loc=loc_noise, scale=scale_noise,
-                                 size=(num_draws, num_noise_observations_in))
+                                 size=(num_draws, num_noise_observations))
 
 
 def draw_mp(shared_memory_parameters,
             num_sub_draws,
             distribution,
-            num_noise_observations_in,
+            num_noise_observations,
             idx,
             loc_noise,
             scale_noise):
@@ -48,7 +48,7 @@ def draw_mp(shared_memory_parameters,
             (the name of the shared memory, the shared memory size)
         num_sub_draws: number of samples to draw
         distribution: type of the noise: gaussian / laplace
-        num_noise_observations_in:  sample size i.e. number of noise values
+        num_noise_observations:  sample size i.e. number of noise values
             at a given separation
         idx: index of the multiprocessing experiment. Needed to tell the
             subprocess where to store the results within the shared memory
@@ -74,7 +74,7 @@ def draw_mp(shared_memory_parameters,
     # Draw random values
     result = draw_noise(distribution,
                         num_sub_draws,
-                        num_noise_observations_in,
+                        num_noise_observations,
                         loc_noise=loc_noise,
                         scale_noise=scale_noise)
 
@@ -83,7 +83,7 @@ def draw_mp(shared_memory_parameters,
     print(".", end='')
 
 
-def draw_mc_sample(num_noise_observations_in,
+def draw_mc_sample(num_noise_observations,
                    num_draws=1,
                    noise_distribution="gaussian",
                    loc_noise=0,
@@ -94,7 +94,7 @@ def draw_mc_sample(num_noise_observations_in,
     10e6 noise values are requested multiprocessing will be used.
 
     Args:
-        num_noise_observations_in: sample size i.e. number of noise values
+        num_noise_observations: sample size i.e. number of noise values
             at a given separation
         num_draws: Number of monte carlo experiments to run.
         noise_distribution: type of the noise: gaussian / laplace
@@ -106,7 +106,7 @@ def draw_mc_sample(num_noise_observations_in,
     Returns:
         planet_observation: np.array containing (num_draws) noise values
         noise_observation: np.array containing (num_draws,
-            num_noise_observations_in) noise values
+            num_noise_observations) noise values
         shared_np_array: if num_draws > 10e6: instance of the shared memory used
             during multiprocessing. Else None.
     """
@@ -122,9 +122,9 @@ def draw_mc_sample(num_noise_observations_in,
         # This is needed to keep the memory usage small
         # 8 is the byte size of float64, +1 for the planet observations
         shared_np_array = shared_memory.SharedMemory(
-            create=True, size=(num_draws * (num_noise_observations_in + 1) * 8))
+            create=True, size=(num_draws * (num_noise_observations + 1) * 8))
 
-        memory_size = (num_draws, num_noise_observations_in + 1,)
+        memory_size = (num_draws, num_noise_observations + 1,)
         shared_memory_name = shared_np_array.name
         memory_parameters = (shared_memory_name, memory_size)
         np_array = np.ndarray(memory_size, dtype=np.float64,
@@ -142,7 +142,7 @@ def draw_mc_sample(num_noise_observations_in,
         pool.starmap(draw_mp, [(memory_parameters,
                                 int(draws_per_task),
                                 noise_distribution,
-                                int(num_noise_observations_in + 1),
+                                int(num_noise_observations + 1),
                                 j,
                                 loc_noise,
                                 scale_noise) for j in range(100)])
@@ -166,7 +166,7 @@ def draw_mc_sample(num_noise_observations_in,
 
         noise_observation = draw_noise(noise_distribution,
                                        num_draws,
-                                       num_noise_observations_in,
+                                       num_noise_observations,
                                        loc_noise=loc_noise,
                                        scale_noise=scale_noise)
 

@@ -263,7 +263,7 @@ class Contrast:
         self.contrast_results = dict()
         for tmp_method_name, method_results in self.results_dict.items():
             tmp_contrast_result = ContrastResult(
-                model_results_in=method_results,
+                model_results=method_results,
                 stellar_flux=self.stellar_flux,
                 planet_photometry_mode=photometry_mode_planet,
                 noise_photometry_mode=photometry_mode_noise,
