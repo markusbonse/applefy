@@ -25,7 +25,7 @@ class TestInterface(ABC):
             num_cpus: The number of CPU core that will be used in all subclass
                 functions (e.g. bootstrapping).
         """
-        self.m_num_cpus = num_cpus
+        self.num_cpus = num_cpus
 
     @abstractmethod
     def test_2samp(self,

@@ -98,9 +98,9 @@ class AperturePhotometryMode(object):
         if flux_mode in ["ASS", "FS"] and search_area is None:
             raise ValueError("Modes ASS and FS need a search_area")
 
-        self.m_flux_mode = flux_mode
-        self.m_aperture_radius = psf_fwhm_radius
-        self.m_search_area = search_area
+        self.flux_mode = flux_mode
+        self.aperture_radius = psf_fwhm_radius
+        self.search_area = search_area
 
     def check_compatible(self,
                          other_aperture_mode):
@@ -115,18 +115,18 @@ class AperturePhotometryMode(object):
             raise ValueError("The given other_aperture_mode is not an instance"
                              "of AperturePhotometryMode. Compatibility check "
                              "not possible.")
-        # If self.m_flux_mode is AS or ASS the other_aperture_mode has to be
+        # If self.flux_mode is AS or ASS the other_aperture_mode has to be
         # AS or ASS as well
-        if self.m_flux_mode in ["AS", "ASS"]:
+        if self.flux_mode in ["AS", "ASS"]:
             return other_aperture_mode.m_flux_mode in ["AS", "ASS"]
 
-        # If self.m_flux_mode is P, F or FS the other_aperture_mode has to be
+        # If self.flux_mode is P, F or FS the other_aperture_mode has to be
         # P or F as FS
-        if self.m_flux_mode in ["P", "FS", "F"]:
+        if self.flux_mode in ["P", "FS", "F"]:
             return other_aperture_mode.m_flux_mode in ["P", "FS", "F"]
 
         # The mode PG has a square aperture and is only compatible with itself
-        if self.m_flux_mode == "PG":
+        if self.flux_mode == "PG":
             return other_aperture_mode.m_flux_mode in ["PG", ]
 
 
@@ -260,13 +260,13 @@ class IterNoise(ABC):
                  photometry_mode: AperturePhotometryMode,
                  max_rotation):
 
-        self.m_residual = residual
-        self.m_separation = separation
-        self.m_psf_fwhm_radius = psf_fwhm_radius
-        self.m_num_iterations = num_iterations
-        self.m_center = center_subpixel(residual)
-        self.m_photometry_mode = photometry_mode
-        self.m_max_rotation = max_rotation
+        self.residual = residual
+        self.separation = separation
+        self.psf_fwhm_radius = psf_fwhm_radius
+        self.num_iterations = num_iterations
+        self.center = center_subpixel(residual)
+        self.photometry_mode = photometry_mode
+        self.max_rotation = max_rotation
 
     @abstractmethod
     def _calc_noise_positions(self,
@@ -274,15 +274,15 @@ class IterNoise(ABC):
         pass
 
     def _calc_angle_offsets(self):
-        if self.m_max_rotation is None:
+        if self.max_rotation is None:
             tmp_max_rotation = 360 / get_number_of_apertures(
-                self.m_separation,
-                self.m_psf_fwhm_radius)
+                self.separation,
+                self.psf_fwhm_radius)
         else:
-            tmp_max_rotation = self.m_max_rotation
+            tmp_max_rotation = self.max_rotation
 
         return np.linspace(0, np.deg2rad(tmp_max_rotation),
-                           self.m_num_iterations)
+                           self.num_iterations)
 
     def __iter__(self):
         angle_offsets = self._calc_angle_offsets()
@@ -295,9 +295,9 @@ class IterNoise(ABC):
             all_flux_values = []
             for tmp_position in tmp_positions:
                 tmp_flux = get_flux(
-                    self.m_residual,
+                    self.residual,
                     tmp_position[:2],  # the first two vales are the x and y pos
-                    photometry_mode=self.m_photometry_mode)
+                    photometry_mode=self.photometry_mode)
 
                 # tmp_flux contains the final position and flux
                 all_flux_values.append(tmp_flux[1])
@@ -346,9 +346,9 @@ class IterNoiseBySeparation(IterNoise):
     def _calc_noise_positions(self,
                               tmp_angle_offset):
         return estimate_aperture_positions(
-            self.m_separation,
-            self.m_center,
-            self.m_psf_fwhm_radius,
+            self.separation,
+            self.center,
+            self.psf_fwhm_radius,
             angle_offset=tmp_angle_offset)
 
 
@@ -396,18 +396,18 @@ class IterNoiseForPlanet(IterNoise):
                          photometry_mode=photometry_mode,
                          max_rotation=max_rotation)
 
-        self.m_planet_position = planet_position
-        self.m_safety_margin = safety_margin
+        self.planet_position = planet_position
+        self.safety_margin = safety_margin
 
-        self.m_separation = np.linalg.norm(
-            np.array(self.m_planet_position) -
-            np.array(self.m_center))
+        self.separation = np.linalg.norm(
+            np.array(self.planet_position) -
+            np.array(self.center))
 
     def _calc_noise_positions(self,
                               tmp_angle_offset):
         return estimate_reference_positions(
-            planet_position=self.m_planet_position,
-            center=self.m_center,
-            psf_fwhm_radius=self.m_psf_fwhm_radius,
+            planet_position=self.planet_position,
+            center=self.center,
+            psf_fwhm_radius=self.psf_fwhm_radius,
             angle_offset=tmp_angle_offset,
-            safety_margin=self.m_safety_margin)
+            safety_margin=self.safety_margin)

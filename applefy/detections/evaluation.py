@@ -561,13 +561,13 @@ def compute_detection_confidence(frame,
 
 def _compute_median_confidence(fake_planet_residuals,
                                fake_planet_positions,
-                               separation_in,
-                               flux_ratio_in,
-                               test_statistic_in,
-                               psf_fwhm_radius_in,
-                               photometry_mode_planet_in,
-                               photometry_mode_noise_in,
-                               num_rot_iter_in=20,
+                               separation,
+                               flux_ratio,
+                               test_statistic,
+                               psf_fwhm_radius,
+                               photometry_mode_planet,
+                               photometry_mode_noise,
+                               num_rot_iter=20,
                                safety_margin=1.0):
     """
     Function used in compute_contrast_map to compute the  fpf of all fake
@@ -583,17 +583,17 @@ def _compute_median_confidence(fake_planet_residuals,
         tmp_median_p, _, _ = compute_detection_confidence(
             frame=tmp_fake_planet_residual,
             planet_position=tmp_planet_position,
-            test_statistic=test_statistic_in,
-            psf_fwhm_radius=psf_fwhm_radius_in,
-            photometry_mode_planet=photometry_mode_planet_in,
-            photometry_mode_noise=photometry_mode_noise_in,
-            num_rot_iter=num_rot_iter_in,
+            test_statistic=test_statistic,
+            psf_fwhm_radius=psf_fwhm_radius,
+            photometry_mode_planet=photometry_mode_planet,
+            photometry_mode_noise=photometry_mode_noise,
+            num_rot_iter=num_rot_iter,
             safety_margin=safety_margin)
 
         all_p_values.append(tmp_median_p)
 
     print(".", end='')
-    return separation_in, flux_ratio_in, np.median(all_p_values)
+    return separation, flux_ratio, np.median(all_p_values)
 
 
 def compute_contrast_map(planet_dict,
@@ -800,7 +800,7 @@ class ContrastResult(object):
         """
 
         # Init additional members needed for flux based estimations
-        self.m_stellar_flux = stellar_flux
+        self.stellar_flux = stellar_flux
 
         # Check if photometry_modes are compatible
         if not planet_photometry_mode.check_compatible(noise_photometry_mode):
@@ -810,18 +810,18 @@ class ContrastResult(object):
                              " compatible.")
 
         # Save the inputs
-        self.m_psf_fwhm_radius = psf_fwhm_radius
-        self.m_planet_mode = planet_photometry_mode
-        self.m_noise_mode = noise_photometry_mode
+        self.psf_fwhm_radius = psf_fwhm_radius
+        self.planet_mode = planet_photometry_mode
+        self.noise_mode = noise_photometry_mode
 
         # Read in the results
         read_in = sort_results(model_results_in)
-        self.m_fp_residual, self.m_planet_dict, self.m_idx_table = read_in
+        self.fp_residual, self.planet_dict, self.idx_table = read_in
 
         # In case throughput values are computed later we initialize the member
         # variables here
-        self.m_throughput_dict = None
-        self.m_median_throughput_table = None
+        self.throughput_dict = None
+        self.median_throughput_table = None
 
     def compute_throughput(self):
         """
@@ -831,17 +831,17 @@ class ContrastResult(object):
             as a function of separation and inserted flux_ratio
         """
 
-        if self.m_median_throughput_table is not None:
-            return self.m_median_throughput_table
+        if self.median_throughput_table is not None:
+            return self.median_throughput_table
 
-        self.m_throughput_dict, self.m_median_throughput_table = \
-            compute_throughput_table(self.m_planet_dict,
-                                     self.m_fp_residual,
-                                     self.m_idx_table,
-                                     self.m_stellar_flux,
-                                     photometry_mode_planet=self.m_planet_mode)
+        self.throughput_dict, self.median_throughput_table = \
+            compute_throughput_table(self.planet_dict,
+                                     self.fp_residual,
+                                     self.idx_table,
+                                     self.stellar_flux,
+                                     photometry_mode_planet=self.planet_mode)
 
-        return self.m_median_throughput_table
+        return self.median_throughput_table
 
     @property
     def residuals(self):
@@ -849,13 +849,13 @@ class ContrastResult(object):
         Returns: A numpy array which combines all residuals from all experiments
             Shape (num_separations, num_flux_ratios, num_planets, x, y)
         """
-        return merge_residual_stack(self.m_planet_dict,
-                                    self.m_idx_table)
+        return merge_residual_stack(self.planet_dict,
+                                    self.idx_table)
 
     def compute_contrast_curve(self,
                                confidence_level_fpf,
                                test_statistic,
-                               num_rot_iterations=100):
+                               num_rot_iter=100):
         """
         Computes a contrast curve given a confidence levels and test statistic.
         This is the analytic computation of a contrast curve that is only
@@ -869,7 +869,7 @@ class ContrastResult(object):
             test_statistic: The test statistic used to constrain the planet flux
                 needed. For classical TTest curves use an instance of
                 apelfei.statistics.parametric.TTest.
-            num_rot_iterations: Number of tests performed with different noise
+            num_rot_iter: Number of tests performed with different noise
                 positions.
 
         Returns: Tuple of:
@@ -878,29 +878,29 @@ class ContrastResult(object):
                 by the positioning of the noise element positions.
         """
 
-        if self.m_median_throughput_table is None:
+        if self.median_throughput_table is None:
             self.compute_throughput()
 
         median_contrast_curve, contrast_error, _ = compute_contrast_curve(
             # use the last row of the throughput table as the throughput
-            throughput_list=self.m_median_throughput_table.T.iloc[-1],
-            stellar_flux=self.m_stellar_flux,
-            fp_residual=self.m_fp_residual,
+            throughput_list=self.median_throughput_table.T.iloc[-1],
+            stellar_flux=self.stellar_flux,
+            fp_residual=self.fp_residual,
             confidence_level_fpf=confidence_level_fpf,
             test_statistic=test_statistic,
-            psf_fwhm_radius=self.m_psf_fwhm_radius,
-            photometry_mode_noise=self.m_noise_mode,
-            num_rot_iter=num_rot_iterations)
+            psf_fwhm_radius=self.psf_fwhm_radius,
+            photometry_mode_noise=self.noise_mode,
+            num_rot_iter=num_rot_iter)
 
         # wrap contrast curves into pandas arrays
         median_contrast_curve = pd.DataFrame(
             median_contrast_curve,
-            index=self.m_idx_table.index,
+            index=self.idx_table.index,
             columns=["contrast", ])
 
         contrast_error = pd.DataFrame(
             contrast_error,
-            index=self.m_idx_table.index,
+            index=self.idx_table.index,
             columns=["MAD of contrast", ])
 
         return median_contrast_curve, contrast_error
@@ -908,7 +908,7 @@ class ContrastResult(object):
     def compute_contrast_grid(self,
                               test_statistic,
                               num_cores=1,
-                              num_rot_iterations=20,
+                              num_rot_iter=20,
                               safety_margin=1.0,
                               confidence_level_fpf=None):
         """
@@ -940,14 +940,14 @@ class ContrastResult(object):
         """
 
         contrast_map = compute_contrast_map(
-            planet_dict=self.m_planet_dict,
-            idx_table=self.m_idx_table,
+            planet_dict=self.planet_dict,
+            idx_table=self.idx_table,
             test_statistic=test_statistic,
-            psf_fwhm_radius=self.m_psf_fwhm_radius,
-            photometry_mode_planet=self.m_planet_mode,
-            photometry_mode_noise=self.m_noise_mode,
+            psf_fwhm_radius=self.psf_fwhm_radius,
+            photometry_mode_planet=self.planet_mode,
+            photometry_mode_noise=self.noise_mode,
             num_cores=num_cores,
-            num_rot_iter=num_rot_iterations,
+            num_rot_iter=num_rot_iter,
             safety_margin=safety_margin)
 
         if isinstance(confidence_level_fpf, (float, np.floating)):

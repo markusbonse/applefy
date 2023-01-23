@@ -156,7 +156,7 @@ class TTest(TestInterface):
         # check if we can use multiprocessing for speedups
         elif len(tau) > 10e4:
             # split the tau values into 100 sub arrays and run them in parallel
-            pool = multiprocessing.Pool(int(self.m_num_cpus))
+            pool = multiprocessing.Pool(int(self.num_cpus))
             mp_results = pool.starmap(
                 stats.t.sf,
                 [(sub_array, m + n - 2) for sub_array in
@@ -201,7 +201,7 @@ class TTest(TestInterface):
 
         tau = t_statistic_vectorized(noise_samples,
                                      planet_samples,
-                                     numba_parallel_threads=self.m_num_cpus)
+                                     numba_parallel_threads=self.num_cpus)
 
         if isinstance(planet_samples, (np.floating, float)):
             num_noise_values = noise_samples.shape[0]

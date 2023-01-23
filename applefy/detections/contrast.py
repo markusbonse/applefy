@@ -300,7 +300,7 @@ class Contrast:
             self,
             test_statistic,
             confidence_level_fpf,
-            num_rot_iterations=20,
+            num_rot_iter=20,
             pixel_scale=None):
 
         # 0.) Check if prepare_contrast_results was executed before
@@ -318,7 +318,7 @@ class Contrast:
             tmp_contrast_curve, tmp_contrast_curve_error = \
                 tmp_result.compute_contrast_curve(
                     test_statistic=test_statistic,
-                    num_rot_iterations=num_rot_iterations,
+                    num_rot_iterations=num_rot_iter,
                     confidence_level_fpf=confidence_level_fpf)
 
             contrast_curves[key] = tmp_contrast_curve["contrast"].values
@@ -345,7 +345,7 @@ class Contrast:
             num_cores,
             confidence_level_fpf,
             safety_margin=1.0,
-            num_rot_iterations=20,
+            num_rot_iter=20,
             pixel_scale=None):
 
         # 0.) Check if prepare_contrast_results was executed before
@@ -365,7 +365,7 @@ class Contrast:
                 tmp_result.compute_contrast_grid(
                     test_statistic=test_statistic,
                     num_cores=num_cores,
-                    num_rot_iterations=num_rot_iterations,
+                    num_rot_iterations=num_rot_iter,
                     safety_margin=safety_margin,
                     confidence_level_fpf=confidence_level_fpf)
 

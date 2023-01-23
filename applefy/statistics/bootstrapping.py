@@ -58,20 +58,20 @@ class BootstrapTest(TTest):
                                  " 1D np.array of noise observations or a list"
                                  " of lists / 1D np.arrays")
 
-        self.m_lookup_tables = dict()
-        self.m_noise_observations = noise_observations
-        if self.m_noise_observations is None:
+        self.lookup_tables = dict()
+        self.noise_observations = noise_observations
+        if self.noise_observations is None:
             return
 
         # If we are in the special case of a single noise observation we have
         # to unify the inputs
         if isinstance(noise_observations, np.ndarray):
             if len(noise_observations.shape) == 1:
-                self.m_noise_observations = [noise_observations, ]
+                self.noise_observations = [noise_observations, ]
 
         if isinstance(noise_observations, list):
             if not isinstance(noise_observations[0], (list, np.ndarray)):
-                self.m_noise_observations = [np.array(noise_observations), ]
+                self.noise_observations = [np.array(noise_observations), ]
 
     @classmethod
     def construct_from_json_file(cls,
@@ -117,7 +117,7 @@ class BootstrapTest(TTest):
                         "fpf": np.array(values["fpf"])}
             lookups_new[int(key)] = tmp_dict
 
-        self.m_lookup_tables.update(lookups_new)
+        self.lookup_tables.update(lookups_new)
 
     def save_lookups(self,
                      lookup_file):
@@ -133,7 +133,7 @@ class BootstrapTest(TTest):
         # internally the values of tau and fpf are np.arrays.
         # We have to convert them into lists
         json_lookups = dict()
-        for key, values in self.m_lookup_tables.items():
+        for key, values in self.lookup_tables.items():
             tmp_dict = {"tau": list(values["tau"]),
                         "fpf": list(values["fpf"])}
             json_lookups[key] = tmp_dict
@@ -175,13 +175,13 @@ class BootstrapTest(TTest):
         # fail later
         num_noise_values = int(num_noise_values)
 
-        if self.m_noise_observations is None:
+        if self.noise_observations is None:
             raise ValueError("Can not run bootstrap experiment without data"
                              " to bootstrap from.")
 
         num_experiments = int(num_draws / memory_size)
 
-        pool = multiprocessing.Pool(int(self.m_num_cpus))
+        pool = multiprocessing.Pool(int(self.num_cpus))
         mp_results = pool.starmap(
             self._run_boostrap_mp,
             [(int(memory_size), int(num_noise_values)), ] * num_experiments)
@@ -204,8 +204,8 @@ class BootstrapTest(TTest):
 
         # Approximate tau by lookup in the tau_results
 
-        # Slow version on non-sorted self.m_t_results
-        # needed_planet_flux = np.quantile(self.m_t_results, 1 - fpf)
+        # Slow version on non-sorted self.t_results
+        # needed_planet_flux = np.quantile(self.t_results, 1 - fpf)
         # Note: We use liner interpolation to approximate the quantiles
 
         # compute the idx where to look up the tau values
@@ -218,9 +218,9 @@ class BootstrapTest(TTest):
 
         tau_approx = d1 + d0
 
-        self.m_lookup_tables[num_noise_values] = dict()
-        self.m_lookup_tables[num_noise_values]["tau"] = tau_approx
-        self.m_lookup_tables[num_noise_values]["fpf"] = fpf_approx
+        self.lookup_tables[num_noise_values] = dict()
+        self.lookup_tables[num_noise_values]["tau"] = tau_approx
+        self.lookup_tables[num_noise_values]["fpf"] = fpf_approx
         return tau_results
 
     def _run_boostrap_mp(self,
@@ -248,7 +248,7 @@ class BootstrapTest(TTest):
         # We draw num_draws indices to select which lists of observations we use
         # for each computation of tau.
         idx_list = np.random.randint(0,
-                                     len(self.m_noise_observations),
+                                     len(self.noise_observations),
                                      num_draws)
         # Example sub_idx[0] = 3 and sub_num_draws[0] = 10 mean that we sample
         # 10 times using the observation list / array at idx 3 in the
@@ -311,14 +311,14 @@ class BootstrapTest(TTest):
 
         """
 
-        if num_noise_values not in self.m_lookup_tables.keys():
+        if num_noise_values not in self.lookup_tables.keys():
             raise ValueError("No bootstrapping distribution of tau available "
                              "for " + str(num_noise_values) + " noise values."
                              " Please run a new bootstrap experiment or restore"
                              " results from CSV files.")
 
-        tau_lookup = self.m_lookup_tables[num_noise_values]["tau"]
-        fpf_lookup = self.m_lookup_tables[num_noise_values]["fpf"]
+        tau_lookup = self.lookup_tables[num_noise_values]["tau"]
+        fpf_lookup = self.lookup_tables[num_noise_values]["fpf"]
 
         # interpolate the results from the lookup table
         tau2fpf = interpolate.interp1d(tau_lookup,
@@ -332,7 +332,7 @@ class BootstrapTest(TTest):
         # check if we can use multiprocessing for speedups
         elif len(tau) > 10e4:
             # split the tau values into 100 sub arrays and run them in parallel
-            pool = multiprocessing.Pool(int(self.m_num_cpus))
+            pool = multiprocessing.Pool(int(self.num_cpus))
             mp_results = pool.starmap(
                 tau2fpf,
                 [(sub_array, ) for sub_array in
@@ -363,14 +363,14 @@ class BootstrapTest(TTest):
         Returns: The needed test statistic tau (float or list of floats)
         """
 
-        if num_noise_values not in self.m_lookup_tables.keys():
+        if num_noise_values not in self.lookup_tables.keys():
             raise ValueError("No bootstrapping distribution of tau available "
                              "for " + str(num_noise_values) + " noise values."
                              " Please run a new bootstrap experiment or restore"
                              " results from CSV files.")
 
-        tau_lookup = self.m_lookup_tables[num_noise_values]["tau"]
-        fpf_lookup = self.m_lookup_tables[num_noise_values]["fpf"]
+        tau_lookup = self.lookup_tables[num_noise_values]["tau"]
+        fpf_lookup = self.lookup_tables[num_noise_values]["fpf"]
 
         # interpolate the results from the lookup table
         fpf2tau = interpolate.interp1d(fpf_lookup,
@@ -412,7 +412,7 @@ class GaussianBootstrapTest(BootstrapTest):
 
         """
 
-        noise_values = self.m_noise_observations[observation_list_idx]
+        noise_values = self.noise_observations[observation_list_idx]
 
         # Step 1: Compute the MLE parameters of the noise distribution under H0
         # Note: As shown in the paper the test statistic tau under H0 is
@@ -464,7 +464,7 @@ class LaplaceBootstrapTest(BootstrapTest):
 
         """
 
-        noise_values = self.m_noise_observations[observation_list_idx]
+        noise_values = self.noise_observations[observation_list_idx]
 
         # Step 1: Compute the MLE parameters of the noise distribution under H0
         # Note: As shown in the paper the test statistic tau under H0 is
