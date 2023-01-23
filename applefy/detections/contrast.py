@@ -298,7 +298,7 @@ class Contrast:
         example_contrast_result = next(iter(self.contrast_results.values()))
         separations_lambda_d = \
             [i / self.psf_fwhm_radius * 2
-             for i in example_contrast_result.m_idx_table.index]
+             for i in example_contrast_result.idx_table.index]
 
         # create the index in lambda / D and arcsec
         if pixel_scale is None:
@@ -309,7 +309,7 @@ class Contrast:
         else:
             separations_arcsec = \
                 [i * pixel_scale
-                 for i in example_contrast_result.m_idx_table.index]
+                 for i in example_contrast_result.idx_table.index]
 
             separation_index = pd.MultiIndex.from_tuples(
                 list(zip(separations_lambda_d, separations_arcsec)),
