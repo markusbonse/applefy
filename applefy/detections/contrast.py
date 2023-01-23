@@ -62,12 +62,6 @@ class Contrast:
         self.stellar_flux = None
         self.contrast_results = None
 
-    @classmethod
-    def create_from_checkpoint_dir(
-            cls,
-            checkpoint_dir):
-        pass
-
     def _create_checkpoint_folders(self):
         self.config_dir = None
         self.residuals_dir = None
@@ -309,6 +303,12 @@ class Contrast:
             num_rot_iterations=20,
             pixel_scale=None):
 
+        # 0.) Check if prepare_contrast_results was executed before
+        if self.contrast_results is None:
+            raise RuntimeError(
+                "compute_contrast_grids requires that "
+                "prepare_contrast_results was executed before.")
+
         # 1.) Compute contrast curves for all method configurations
         contrast_curves = dict()
         contrast_curves_mad = dict()
@@ -347,6 +347,12 @@ class Contrast:
             safety_margin=1.0,
             num_rot_iterations=20,
             pixel_scale=None):
+
+        # 0.) Check if prepare_contrast_results was executed before
+        if self.contrast_results is None:
+            raise RuntimeError(
+                "compute_contrast_grids requires that "
+                "prepare_contrast_results was executed before.")
 
         # 1.) Compute contrast grids for all method configurations
         contrast_curves = dict()
