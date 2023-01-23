@@ -4,11 +4,13 @@ import numpy as np
 from joblib import Parallel, delayed
 from abc import ABC, abstractmethod
 
-from applefy.utils.data_handling import save_as_fits, open_fits
+from applefy.utils.data_handling import save_as_fits, open_fits, \
+    create_checkpoint_folders, search_for_config_and_residual_files
 from applefy.detections.preparation import calculate_planet_positions, \
     generate_fake_planet_experiments, save_experiment_configs
 from applefy.detections.execution import add_fake_planets
-from applefy.detections.evaluation import estimate_stellar_flux, ContrastResult
+from applefy.detections.evaluation import estimate_stellar_flux, \
+    ContrastResult, read_results
 
 
 class DataReductionInterface(ABC):
@@ -48,9 +50,8 @@ class Contrast:
         self.scaling_factor = scaling_factor
 
         # create structure for the checkpoints
-        self.checkpoint_dir = checkpoint_dir
-
-        sub_folders = self._create_checkpoint_folders()
+        self.checkpoint_dir = Path(checkpoint_dir)
+        sub_folders = create_checkpoint_folders(self.checkpoint_dir)
         self.config_dir, self.residual_dir, self.scratch_dir = sub_folders
 
         # TODO add auto mode
@@ -62,32 +63,53 @@ class Contrast:
         self.stellar_flux = None
         self.contrast_results = None
 
-    def _create_checkpoint_folders(self):
-        self.config_dir = None
-        self.residuals_dir = None
+    @classmethod
+    def create_from_checkpoint_dir(
+            cls,
+            psf_template,
+            psf_fwhm_radius,
+            dit_science,
+            dit_psf_template,
+            checkpoint_dir,
+            scaling_factor=1):
 
-        # if no experiment_root_dir is given we don't save results
-        if self.checkpoint_dir is None:
-            return
+        # 1.) Create an instance of Contrast
+        contrast_instance = cls(
+            science_sequence=None,
+            psf_template=psf_template,
+            psf_fwhm_radius=psf_fwhm_radius,
+            parang=None,
+            dit_science=dit_science,
+            dit_psf_template=dit_psf_template,
+            scaling_factor=scaling_factor,
+            checkpoint_dir=checkpoint_dir)
 
-        # use pathlib for easy path handling
-        self.checkpoint_dir = Path(self.checkpoint_dir)
+        # Note: we don't have to restore the experimental_setups as they are not
+        # used by compute_analytic_contrast_curves or compute_contrast_grids
 
-        # check if the experiment_root_dir exists
-        if not self.checkpoint_dir.is_dir():
-            raise IOError("The directory " + str(self.checkpoint_dir) +
-                          " does not exist. Please create it.")
+        # 2.) restore the results_dict from the checkpoint_dir
+        # we have to this for each method directory we find
+        methods = []
+        for tmp_folder in contrast_instance.residual_dir.iterdir():
+            if not tmp_folder.is_dir():
+                continue
 
-        # create sub-folders if they do not exist
-        config_dir = self.checkpoint_dir / "configs_cgrid"
-        residual_dir = self.checkpoint_dir / "residuals"
-        scratch_dir = self.checkpoint_dir / "scratch"
+            methods.append(tmp_folder)
 
-        config_dir.mkdir(parents=False, exist_ok=True)
-        residual_dir.mkdir(parents=False, exist_ok=True)
-        scratch_dir.mkdir(parents=False, exist_ok=True)
+        # create an empty dict for the result we read
+        contrast_instance.results_dict = dict()
 
-        return config_dir, residual_dir, scratch_dir
+        for tmp_method_dir in sorted(methods):
+            # search for all files for the given method
+            result_files = search_for_config_and_residual_files(
+                config_dir=contrast_instance.config_dir,
+                method_dir=tmp_method_dir)
+
+            # restore the results
+            tmp_results = read_results(result_files)
+            contrast_instance.results_dict[tmp_method_dir.name] = tmp_results
+
+        return contrast_instance
 
     def design_fake_planet_experiments(
             self,
@@ -318,7 +340,7 @@ class Contrast:
             tmp_contrast_curve, tmp_contrast_curve_error = \
                 tmp_result.compute_contrast_curve(
                     test_statistic=test_statistic,
-                    num_rot_iterations=num_rot_iter,
+                    num_rot_iter=num_rot_iter,
                     confidence_level_fpf=confidence_level_fpf)
 
             contrast_curves[key] = tmp_contrast_curve["contrast"].values
@@ -365,7 +387,7 @@ class Contrast:
                 tmp_result.compute_contrast_grid(
                     test_statistic=test_statistic,
                     num_cores=num_cores,
-                    num_rot_iterations=num_rot_iter,
+                    num_rot_iter=num_rot_iter,
                     safety_margin=safety_margin,
                     confidence_level_fpf=confidence_level_fpf)
 

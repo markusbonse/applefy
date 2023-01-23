@@ -3,11 +3,88 @@ Simple helper functions to handle data
 """
 import os
 import h5py
+from pathlib import Path
 from astropy.io import fits
 import numpy as np
-import time
-import datetime
 from copy import deepcopy
+
+
+def create_checkpoint_folders(checkpoint_dir):
+
+    # if no experiment_root_dir is given we don't save results
+    if checkpoint_dir is None:
+        return
+
+    # use pathlib for easy path handling
+    checkpoint_dir = Path(checkpoint_dir)
+
+    # check if the experiment_root_dir exists
+    if not checkpoint_dir.is_dir():
+        raise IOError("The directory " + str(checkpoint_dir) +
+                      " does not exist. Please create it.")
+
+    # create sub-folders if they do not exist
+    config_dir = checkpoint_dir / "configs_cgrid"
+    residual_dir = checkpoint_dir / "residuals"
+    scratch_dir = checkpoint_dir / "scratch"
+
+    config_dir.mkdir(parents=False, exist_ok=True)
+    residual_dir.mkdir(parents=False, exist_ok=True)
+    scratch_dir.mkdir(parents=False, exist_ok=True)
+
+    return config_dir, residual_dir, scratch_dir
+
+
+def search_for_config_and_residual_files(
+        config_dir,
+        method_dir):
+
+    collected_result_file = []
+
+    # find all config files
+    config_files = dict(collect_all_data_setup_configs(config_dir))
+
+    for tmp_file in method_dir.iterdir():
+        if not tmp_file.name.startswith("residual_"):
+            continue
+
+        tmp_idx = tmp_file.name.split("_ID_")[1].split(".")[0]
+        tmp_config_path = str(config_files[tmp_idx])
+        tmp_residual_path = str(tmp_file)
+
+        del config_files[tmp_idx]
+        collected_result_file.append((tmp_config_path, tmp_residual_path))
+
+    if len(config_files) != 0:
+        raise FileNotFoundError(
+            "Some residuals are missing. Check if all config files "
+            "have a matching residual.")
+
+    return collected_result_file
+
+
+def collect_all_data_setup_configs(data_setups_dir):
+    """
+    Simple function which looks for all auto generated contrast map config
+    files in one directory
+
+    Args:
+        data_setups_dir: The directory to be browsed by the method
+
+    Returns: a list of tuples (job_id, file path)
+
+    """
+    # 1.) Collect all jobs to be run
+    all_datasets_configs = []
+    for tmp_file in sorted(os.listdir(data_setups_dir)):
+        if not tmp_file.startswith("exp_"):
+            continue
+
+        tmp_id = tmp_file.split(".")[0].split("_")[-1]
+        all_datasets_configs.append(
+            (tmp_id, os.path.join(data_setups_dir, tmp_file)))
+
+    return all_datasets_configs
 
 
 def read_apples_with_apples_root():

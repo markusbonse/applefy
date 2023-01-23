@@ -3,32 +3,7 @@ Functions and Tools to generate fake planet data sets as input for any
 post-processing method.
 """
 import numpy as np
-import os
 from scipy.ndimage import shift
-
-
-def collect_all_data_setup_configs(data_setups_dir):
-    """
-    Simple function which looks for all auto generated contrast map config
-    files in one directory
-
-    Args:
-        data_setups_dir: The directory to be browsed by the method
-
-    Returns: a list of tuples (job_id, file path)
-
-    """
-    # 1.) Collect all jobs to be run
-    all_datasets_configs = []
-    for tmp_file in sorted(os.listdir(data_setups_dir)):
-        if not tmp_file.startswith("exp_"):
-            continue
-
-        tmp_id = tmp_file.split(".")[0].split("_")[-1]
-        all_datasets_configs.append(
-            (tmp_id, os.path.join(data_setups_dir, tmp_file)))
-
-    return all_datasets_configs
 
 
 def add_fake_planets(
