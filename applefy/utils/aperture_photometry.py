@@ -196,8 +196,8 @@ def get_flux(
 
         # Enforce symmetry:
         # Tie standard deviation parameters to same value
-        def tie_stddev(gaussian_model):
-            return gaussian_model.y_stddev
+        def tie_stddev(gaussian_model_local):
+            return gaussian_model_local.y_stddev
 
         gaussian_model.x_stddev.tied = tie_stddev
 
