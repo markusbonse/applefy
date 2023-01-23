@@ -118,16 +118,16 @@ class AperturePhotometryMode(object):
         # If self.flux_mode is AS or ASS the other_aperture_mode has to be
         # AS or ASS as well
         if self.flux_mode in ["AS", "ASS"]:
-            return other_aperture_mode.m_flux_mode in ["AS", "ASS"]
+            return other_aperture_mode.flux_mode in ["AS", "ASS"]
 
         # If self.flux_mode is P, F or FS the other_aperture_mode has to be
         # P or F as FS
         if self.flux_mode in ["P", "FS", "F"]:
-            return other_aperture_mode.m_flux_mode in ["P", "FS", "F"]
+            return other_aperture_mode.flux_mode in ["P", "FS", "F"]
 
         # The mode PG has a square aperture and is only compatible with itself
         if self.flux_mode == "PG":
-            return other_aperture_mode.m_flux_mode in ["PG", ]
+            return other_aperture_mode.flux_mode in ["PG", ]
 
 
 def get_flux(
@@ -148,12 +148,12 @@ def get_flux(
     Returns: A tuple ((final_pos_x, final_pos_y), estimated_flux)
     """
 
-    if photometry_mode.m_flux_mode in ["AS", "ASS", "P"]:
+    if photometry_mode.flux_mode in ["AS", "ASS", "P"]:
         # Modes based on apertures
 
-        if photometry_mode.m_flux_mode == "ASS":
-            offset_range = np.linspace(-photometry_mode.m_search_area,
-                                       photometry_mode.m_search_area, 5)
+        if photometry_mode.flux_mode == "ASS":
+            offset_range = np.linspace(-photometry_mode.search_area,
+                                       photometry_mode.search_area, 5)
             new_positions = np.array(np.meshgrid(
                 offset_range + position[0],
                 offset_range + position[1])).reshape(2, -1).T
@@ -161,10 +161,10 @@ def get_flux(
             new_positions = position
 
         # A pixel is handled as an aperture with one pixel diameter
-        if photometry_mode.m_flux_mode == "P":
+        if photometry_mode.flux_mode == "P":
             aperture_radius = 0.5
         else:
-            aperture_radius = photometry_mode.m_aperture_radius
+            aperture_radius = photometry_mode.aperture_radius
 
         tmp_apertures = CircularAperture(positions=new_positions,
                                          r=aperture_radius)
@@ -182,7 +182,7 @@ def get_flux(
 
         return best_position, best_aperture_sum
 
-    elif photometry_mode.m_flux_mode in ["F", "FS"]:
+    elif photometry_mode.flux_mode in ["F", "FS"]:
         # Modes with Gaussian fit
 
         # Define the grid for the fit
@@ -202,18 +202,18 @@ def get_flux(
         gaussian_model.x_stddev.tied = tie_stddev
 
         # Optional: Fix x and y position
-        if photometry_mode.m_flux_mode == "F":
+        if photometry_mode.flux_mode == "F":
             gaussian_model.x_mean.fixed = True
             gaussian_model.y_mean.fixed = True
         else:
             gaussian_model.x_mean.min = \
-                position[0] - photometry_mode.m_search_area
+                position[0] - photometry_mode.search_area
             gaussian_model.x_mean.max = \
-                position[0] + photometry_mode.m_search_area
+                position[0] + photometry_mode.search_area
             gaussian_model.y_mean.min = \
-                position[1] - photometry_mode.m_search_area
+                position[1] - photometry_mode.search_area
             gaussian_model.y_mean.max = \
-                position[1] + photometry_mode.m_search_area
+                position[1] + photometry_mode.search_area
 
         # Fit the model to the data
         fit_p = fitting.LevMarLSQFitter()
