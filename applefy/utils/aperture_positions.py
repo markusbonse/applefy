@@ -7,8 +7,7 @@ import math
 from itertools import filterfalse
 
 
-def get_number_of_apertures(separation,
-                            psf_fwhm_radius):
+def get_number_of_apertures(separation, psf_fwhm_radius):
     """
     Estimate the number of available aperture or independent pixel positions
     for a given separation.
@@ -26,10 +25,11 @@ def get_number_of_apertures(separation,
     return int(math.floor(math.pi * separation / psf_fwhm_radius))
 
 
-def estimate_aperture_positions(separation,
-                                center,
-                                psf_fwhm_radius,
-                                angle_offset=0.0):
+def estimate_aperture_positions(
+        separation,
+        center,
+        psf_fwhm_radius,
+        angle_offset=0.0):
     """
     Calculation of aperture or independent pixel positions ordered on a ring
     around the center
@@ -65,11 +65,12 @@ def estimate_aperture_positions(separation,
     return all_positions
 
 
-def estimate_reference_positions(planet_position,
-                                 center,
-                                 psf_fwhm_radius,
-                                 angle_offset=0.0,
-                                 safety_margin=0.0):
+def estimate_reference_positions(
+        planet_position,
+        center,
+        psf_fwhm_radius,
+        angle_offset=0.0,
+        safety_margin=0.0):
     """
     Calculation of aperture positions or independent pixels ordered on a ring
     around the center. The separation of the ring is given by the distance of

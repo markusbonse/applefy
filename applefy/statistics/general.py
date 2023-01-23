@@ -16,8 +16,7 @@ class TestInterface(ABC):
     bootstrapping.py
     """
 
-    def __init__(self,
-                 num_cpus=1):
+    def __init__(self, num_cpus=1):
         """
         Constructor interface.
 
@@ -28,9 +27,10 @@ class TestInterface(ABC):
         self.num_cpus = num_cpus
 
     @abstractmethod
-    def test_2samp(self,
-                   planet_samples,
-                   noise_samples):
+    def test_2samp(
+            self,
+            planet_samples,
+            noise_samples):
         """
         Performs one (or multiple) two sample test given noise observations
         (X1, ...., Xn) and a planet observation (Y1,)
@@ -72,10 +72,11 @@ class TestInterface(ABC):
         return
 
     @abstractmethod
-    def constrain_planet(self,
-                         noise_at_planet_pos,
-                         noise_samples,
-                         desired_confidence_fpf):
+    def constrain_planet(
+            self,
+            noise_at_planet_pos,
+            noise_samples,
+            desired_confidence_fpf):
         """
         The inverse of test_2samp. Given noise observations (X1, ..., Xn-1) and
         a single noise observation (Xn) this function computes how much flux

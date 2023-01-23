@@ -32,9 +32,10 @@ class BootstrapTest(TTest):
     fpf to statistic and vice versa.
     """
 
-    def __init__(self,
-                 noise_observations,
-                 num_cpus=1):
+    def __init__(
+            self,
+            noise_observations,
+            num_cpus=1):
         """
         Constructor of a BootstrapTest.
 
@@ -74,8 +75,7 @@ class BootstrapTest(TTest):
                 self.noise_observations = [np.array(noise_observations), ]
 
     @classmethod
-    def construct_from_json_file(cls,
-                                 lookup_file):
+    def construct_from_json_file(cls, lookup_file):
         """
         An alternative constructor to create a BootstrapTest based on previously
         calculated bootstrap results given as a .json file.
@@ -93,8 +93,7 @@ class BootstrapTest(TTest):
         return bootstrap_test
 
     # functions for loading and saving lookup tables
-    def restore_lookups(self,
-                        lookup_file):
+    def restore_lookups(self, lookup_file):
         """
         Restores previous bootstrap results / lookup tables from a .json file.
         The set of already available lookup tables is updated. Duplicated are
@@ -119,8 +118,7 @@ class BootstrapTest(TTest):
 
         self.lookup_tables.update(lookups_new)
 
-    def save_lookups(self,
-                     lookup_file):
+    def save_lookups(self, lookup_file):
         """
         Saves the internal lookup tables into a .json file. This way they can be
         restored using restore_lookups on a later stage.
@@ -143,12 +141,13 @@ class BootstrapTest(TTest):
             json.dump(json_lookups, f)
 
     # functions to run bootstrapping
-    def run_bootstrap_experiment(self,
-                                 memory_size,
-                                 num_noise_values,
-                                 num_draws=10e8,
-                                 approximation_interval=
-                                 np.linspace(-7, 7, 10000)):
+    def run_bootstrap_experiment(
+            self,
+            memory_size,
+            num_noise_values,
+            num_draws=10e8,
+            approximation_interval=
+            np.linspace(-7, 7, 10000)):
         """
         Calculates the distribution of the test statistic tau under H0 for a
         sample size of m=1 (one planet) and n=num_noise_values by using
@@ -223,9 +222,10 @@ class BootstrapTest(TTest):
         self.lookup_tables[num_noise_values]["fpf"] = fpf_approx
         return tau_results
 
-    def _run_boostrap_mp(self,
-                         num_draws,
-                         num_noise_values):
+    def _run_boostrap_mp(
+            self,
+            num_draws,
+            num_noise_values):
         """
         Internal function used to resample and calculate the test statistic tau.
         This function is executed in parallel in run_bootstrap_experiment.
@@ -270,10 +270,11 @@ class BootstrapTest(TTest):
         return np.concatenate(tau_values).flatten()
 
     @abstractmethod
-    def _sample_tau(self,
-                    observation_list_idx,
-                    num_draws,
-                    num_noise_values):
+    def _sample_tau(
+            self,
+            observation_list_idx,
+            num_draws,
+            num_noise_values):
         """
         Abstract interface which is implemented by the inheriting classes. This
         function contains how we resample during the bootstrapping and is
@@ -294,9 +295,10 @@ class BootstrapTest(TTest):
         return 0
 
     # functions to compute the tests
-    def tau2fpf(self,
-                tau,
-                num_noise_values):
+    def tau2fpf(
+            self,
+            tau,
+            num_noise_values):
         """
         Computed the confidence as fpf given the test statistic tau. Takes into
         account the effect of the sample size and type of the noise by using
@@ -346,9 +348,10 @@ class BootstrapTest(TTest):
 
         return fpf
 
-    def fpf2tau(self,
-                fpf,
-                num_noise_values):
+    def fpf2tau(
+            self,
+            fpf,
+            num_noise_values):
         """
         Computes the required value of tau (the test statistic) to get a
         confidence level of fpf. Takes into account the effect of the sample
@@ -393,10 +396,11 @@ class GaussianBootstrapTest(BootstrapTest):
     purposes and should not be used in practice.
     """
 
-    def _sample_tau(self,
-                    observation_list_idx,
-                    num_draws,
-                    num_noise_values):
+    def _sample_tau(
+            self,
+            observation_list_idx,
+            num_draws,
+            num_noise_values):
         """
         Uses Parametric bootstrapping to resample from a Gaussian distribution.
 
@@ -445,10 +449,11 @@ class LaplaceBootstrapTest(BootstrapTest):
     at close separations to the star.
     """
 
-    def _sample_tau(self,
-                    observation_list_idx,
-                    num_draws,
-                    num_noise_values):
+    def _sample_tau(
+            self,
+            observation_list_idx,
+            num_draws,
+            num_noise_values):
         """
         Uses Parametric bootstrapping to resample from a Laplacian distribution.
 

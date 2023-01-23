@@ -15,8 +15,7 @@ from applefy.statistics.general import TestInterface
 
 
 @njit(parallel=True)
-def _t_statistic_vectorized_numba(noise_samples,
-                                  planet_samples):
+def _t_statistic_vectorized_numba(noise_samples, planet_samples):
     """
     Fast and parallel version of t_statistic_vectorized using numba. More
     information given in t_statistic_vectorized.
@@ -38,9 +37,10 @@ def _t_statistic_vectorized_numba(noise_samples,
     return np.array(res)
 
 
-def t_statistic_vectorized(noise_samples,
-                           planet_samples,
-                           numba_parallel_threads=1):
+def t_statistic_vectorized(
+        noise_samples,
+        planet_samples,
+        numba_parallel_threads=1):
     """
     Computes the test-statistic of the ttest / bootstrapping using vectorized
     code. Usually noise_samples and planet_samples contain a list of
@@ -111,9 +111,10 @@ class TTest(TestInterface):
     """
 
     @classmethod
-    def fpf2tau(cls,
-                fpf,
-                num_noise_values):
+    def fpf2tau(
+            cls,
+            fpf,
+            num_noise_values):
         """
         Computes the required value of tau (the test statistic) to get a
         confidence level of fpf. Takes into account the effect of the sample
@@ -132,9 +133,10 @@ class TTest(TestInterface):
         tau = stats.t.isf(fpf, df=n + m - 2)
         return tau
 
-    def tau2fpf(self,
-                tau,
-                num_noise_values):
+    def tau2fpf(
+            self,
+            tau,
+            num_noise_values):
         """
         Computed the confidence as fpf given the test statistic tau. Takes into
         account the effect of the sample size by using the t-distribution.
@@ -170,9 +172,10 @@ class TTest(TestInterface):
 
         return fpf
 
-    def test_2samp(self,
-                   planet_samples,
-                   noise_samples):
+    def test_2samp(
+            self,
+            planet_samples,
+            noise_samples):
         """
         Performs a two sample T-Test. This implementation is similar to the one
         in scipy but calculates the special case where only one planet sample
@@ -212,10 +215,11 @@ class TTest(TestInterface):
 
         return p_values, tau
 
-    def constrain_planet(self,
-                         noise_at_planet_pos,
-                         noise_samples,
-                         desired_confidence_fpf):
+    def constrain_planet(
+            self,
+            noise_at_planet_pos,
+            noise_samples,
+            desired_confidence_fpf):
         """
         The inverse of test_2samp. Given noise observations (X1, ..., Xn-1) and
         a single noise observation (Xn) this function computes how much flux

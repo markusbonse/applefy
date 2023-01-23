@@ -14,10 +14,11 @@ from applefy.utils.aperture_photometry import AperturePhotometryMode, \
     IterNoiseBySeparation
 
 
-def extract_circular_annulus(separation,
-                             size_resolution_elements,
-                             frame_in,
-                             annulus_width=0.5):
+def extract_circular_annulus(
+        separation,
+        size_resolution_elements,
+        frame_in,
+        annulus_width=0.5):
     """
     Function to extract the pixel positions and values around a circular annulus
     at a given separation and annulus width.
@@ -52,9 +53,10 @@ def extract_circular_annulus(separation,
     return res_all_pixel, tmp_positions, res_mask_img
 
 
-def gaussian_r2(noise_samples,
-                fit_method="least squares",
-                return_fit=False):
+def gaussian_r2(
+        noise_samples,
+        fit_method="least squares",
+        return_fit=False):
     """
     Simple function to calculate how well the given noise samples can be
     explained by the normal distribution.
@@ -97,11 +99,12 @@ def gaussian_r2(noise_samples,
     return r2
 
 
-def estimate_gaussian_r2(input_residual_frame,
-                         separation,
-                         size_resolution_elements,
-                         annulus_width=0.5,
-                         fit_method="least squares"):
+def estimate_gaussian_r2(
+        input_residual_frame,
+        separation,
+        size_resolution_elements,
+        annulus_width=0.5,
+        fit_method="least squares"):
     """
     Extracts pixel values inside a circular annulus around the center of the
     input residual frame and computes the r2 of the pixel values w.r.t. to
@@ -143,11 +146,12 @@ def estimate_gaussian_r2(input_residual_frame,
     return r2
 
 
-def test_normality_shapiro_wilk(input_residual_frame,
-                                separation,
-                                size_resolution_elements,
-                                num_iterations,
-                                photometry_mode: AperturePhotometryMode):
+def test_normality_shapiro_wilk(
+        input_residual_frame,
+        separation,
+        size_resolution_elements,
+        num_iterations,
+        photometry_mode: AperturePhotometryMode):
 
     """
     Runs a Shapiro-Wilk test on photometry values at a given separation around

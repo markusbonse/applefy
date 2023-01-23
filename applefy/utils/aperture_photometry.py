@@ -49,10 +49,11 @@ class AperturePhotometryMode(object):
     the foundation of many other functions.
     """
 
-    def __init__(self,
-                 flux_mode,
-                 psf_fwhm_radius=None,
-                 search_area=None):
+    def __init__(
+            self,
+            flux_mode,
+            psf_fwhm_radius=None,
+            search_area=None):
         """
         Constructor of the class. Takes the parameters needed by
         utils.aperture_photometry.get_aperture_flux and checks them for
@@ -102,8 +103,7 @@ class AperturePhotometryMode(object):
         self.aperture_radius = psf_fwhm_radius
         self.search_area = search_area
 
-    def check_compatible(self,
-                         other_aperture_mode):
+    def check_compatible(self, other_aperture_mode):
         """
         Check if the mode is compatible with a second given mode. Returns False
             if the modes are not compatible
@@ -130,9 +130,10 @@ class AperturePhotometryMode(object):
             return other_aperture_mode.m_flux_mode in ["PG", ]
 
 
-def get_flux(frame,
-             position,
-             photometry_mode: AperturePhotometryMode):
+def get_flux(
+        frame,
+        position,
+        photometry_mode: AperturePhotometryMode):
     """
     Function to estimate the flux at and / or around a given position in frame.
 
@@ -252,13 +253,14 @@ class IterNoise(ABC):
     Abstract interface for IterNoiseBySeparation and IterNoiseForPlanet
     """
 
-    def __init__(self,
-                 residual,
-                 separation,
-                 psf_fwhm_radius,
-                 num_iterations,
-                 photometry_mode: AperturePhotometryMode,
-                 max_rotation):
+    def __init__(
+            self,
+            residual,
+            separation,
+            psf_fwhm_radius,
+            num_iterations,
+            photometry_mode: AperturePhotometryMode,
+            max_rotation):
 
         self.residual = residual
         self.separation = separation
@@ -269,8 +271,7 @@ class IterNoise(ABC):
         self.max_rotation = max_rotation
 
     @abstractmethod
-    def _calc_noise_positions(self,
-                              tmp_angle_offset):
+    def _calc_noise_positions(self, tmp_angle_offset):
         pass
 
     def _calc_angle_offsets(self):
@@ -312,13 +313,14 @@ class IterNoiseBySeparation(IterNoise):
     rotation on the estimation of contrast.
     """
 
-    def __init__(self,
-                 residual,
-                 separation,
-                 psf_fwhm_radius,
-                 num_iterations,
-                 photometry_mode: AperturePhotometryMode,
-                 max_rotation=360):
+    def __init__(
+            self,
+            residual,
+            separation,
+            psf_fwhm_radius,
+            num_iterations,
+            photometry_mode: AperturePhotometryMode,
+            max_rotation=360):
         """
         Constructor of the IterNoiseBySeparation.
 
@@ -359,14 +361,15 @@ class IterNoiseForPlanet(IterNoise):
     the effect of rotation on the contrast.
     """
 
-    def __init__(self,
-                 residual,
-                 planet_position,
-                 safety_margin,
-                 psf_fwhm_radius,
-                 num_iterations,
-                 photometry_mode: AperturePhotometryMode,
-                 max_rotation=None):
+    def __init__(
+            self,
+            residual,
+            planet_position,
+            safety_margin,
+            psf_fwhm_radius,
+            num_iterations,
+            photometry_mode: AperturePhotometryMode,
+            max_rotation=None):
         """
         Constructor of the IterNoiseForPlanet
 
@@ -389,12 +392,13 @@ class IterNoiseForPlanet(IterNoise):
                 separation.
         """
 
-        super().__init__(residual=residual,
-                         separation=None,
-                         psf_fwhm_radius=psf_fwhm_radius,
-                         num_iterations=num_iterations,
-                         photometry_mode=photometry_mode,
-                         max_rotation=max_rotation)
+        super().__init__(
+            residual=residual,
+            separation=None,
+            psf_fwhm_radius=psf_fwhm_radius,
+            num_iterations=num_iterations,
+            photometry_mode=photometry_mode,
+            max_rotation=max_rotation)
 
         self.planet_position = planet_position
         self.safety_margin = safety_margin
@@ -403,8 +407,8 @@ class IterNoiseForPlanet(IterNoise):
             np.array(self.planet_position) -
             np.array(self.center))
 
-    def _calc_noise_positions(self,
-                              tmp_angle_offset):
+    def _calc_noise_positions(self, tmp_angle_offset):
+
         return estimate_reference_positions(
             planet_position=self.planet_position,
             center=self.center,

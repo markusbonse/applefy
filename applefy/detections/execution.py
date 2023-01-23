@@ -31,13 +31,14 @@ def collect_all_data_setup_configs(data_setups_dir):
     return all_datasets_configs
 
 
-def add_fake_planets(input_stack: np.array,
-                     psf_template: np.array,
-                     parang: np.array,
-                     dit_science: float,
-                     dit_psf_template: float,
-                     experiment_config: dict,
-                     scaling_factor=1):
+def add_fake_planets(
+        input_stack: np.array,
+        psf_template: np.array,
+        parang: np.array,
+        dit_science: float,
+        dit_psf_template: float,
+        experiment_config: dict,
+        scaling_factor=1):
     """
     Function which adds fake planets to ADI data based on a contrast map
     config file.

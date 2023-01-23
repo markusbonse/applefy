@@ -6,11 +6,12 @@ import numpy as np
 from multiprocessing import Pool, shared_memory
 
 
-def draw_noise(distribution,
-               num_draws,
-               num_noise_observations,
-               loc_noise,
-               scale_noise):
+def draw_noise(
+        distribution,
+        num_draws,
+        num_noise_observations,
+        loc_noise,
+        scale_noise):
     """
     Simple function to draw noise for the MC simulation
 
@@ -34,13 +35,14 @@ def draw_noise(distribution,
                                  size=(num_draws, num_noise_observations))
 
 
-def draw_mp(shared_memory_parameters,
-            num_sub_draws,
-            distribution,
-            num_noise_observations,
-            idx,
-            loc_noise,
-            scale_noise):
+def draw_mp(
+        shared_memory_parameters,
+        num_sub_draws,
+        distribution,
+        num_noise_observations,
+        idx,
+        loc_noise,
+        scale_noise):
     """
     Function to sample noise using multiprocessing
     Args:
@@ -83,12 +85,13 @@ def draw_mp(shared_memory_parameters,
     print(".", end='')
 
 
-def draw_mc_sample(num_noise_observations,
-                   num_draws=1,
-                   noise_distribution="gaussian",
-                   loc_noise=0,
-                   scale_noise=1,
-                   num_cores=1):
+def draw_mc_sample(
+        num_noise_observations,
+        num_draws=1,
+        noise_distribution="gaussian",
+        loc_noise=0,
+        scale_noise=1,
+        num_cores=1):
     """
     Function for efficient noise sampling in the MC simulation. If more than
     10e6 noise values are requested multiprocessing will be used.

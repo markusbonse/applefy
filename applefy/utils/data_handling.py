@@ -48,10 +48,11 @@ def cut_and_stack(psf_template: np.array,
     return science_data_cut, par_angles, psf_template_cut
 
 
-def load_adi_data(hdf5_dataset: str,
-                  data_tag: str,
-                  psf_template_tag: str,
-                  para_tag="PARANG"):
+def load_adi_data(
+        hdf5_dataset: str,
+        data_tag: str,
+        psf_template_tag: str,
+        para_tag="PARANG"):
     """
     Function to load ADI data from hdf5 files
     :param hdf5_dataset: The path to the hdf5 file

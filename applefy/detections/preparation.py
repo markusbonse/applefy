@@ -11,10 +11,11 @@ from applefy.utils.aperture_positions import \
 from applefy.utils.general import center_subpixel
 
 
-def calculate_planet_positions(test_img,
-                               psf_fwhm_radius,
-                               num_planets=6,
-                               separations=None):
+def calculate_planet_positions(
+        test_img,
+        psf_fwhm_radius,
+        num_planets=6,
+        separations=None):
     """
     Function which estimates the positions for fake planets to be inserted to
     calculate contrast maps.
@@ -66,8 +67,9 @@ def calculate_planet_positions(test_img,
     return planet_positions
 
 
-def generate_fake_planet_experiments(flux_ratios: list,
-                                     planet_positions: dict):
+def generate_fake_planet_experiments(
+        flux_ratios: list,
+        planet_positions: dict):
     """
         Function which creates config files for the contrast map. Each file
         corresponds to one experiment / data reduction. The experiment with idx
