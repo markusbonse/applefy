@@ -1,11 +1,25 @@
+"""
+The contrast module is the main interface to compute contrast curves with
+applefy.
+"""
+
+# TODO add link to an example
+
+from __future__ import annotations
+from typing import List, Dict, Optional, Union, Tuple
+
+from abc import ABC, abstractmethod
 from pathlib import Path
+
 import pandas as pd
 import numpy as np
 from joblib import Parallel, delayed
-from abc import ABC, abstractmethod
 
 from applefy.utils.data_handling import save_as_fits, open_fits, \
     create_checkpoint_folders, search_for_config_and_residual_files
+from applefy.utils.aperture_photometry import AperturePhotometryMode
+from applefy.statistics.general import TestInterface
+
 from applefy.detections.preparation import calculate_planet_positions, \
     generate_fake_planet_experiments, save_experiment_configs
 from applefy.detections.execution import add_fake_planets
@@ -13,38 +27,65 @@ from applefy.detections.evaluation import estimate_stellar_flux, \
     ContrastResult, read_results
 
 
-class DataReductionInterface(ABC):
-
-    @abstractmethod
-    def get_method_keys(self):
-        pass
-
-    @abstractmethod
-    def __call__(
-            self,
-            stack_with_fake_planet,
-            parang_rad,
-            psf_template,
-            exp_id):
-        pass
-
-
 class Contrast:
+    # TODO add link to an example
+    """
+    The Contrast class is the main interface to compute contrast curves with
+    applefy. It allows to compute contrast grids as well as classical
+    analytical contrast curves.
+    """
 
     def __init__(
             self,
-            science_sequence,
-            psf_template,
-            psf_fwhm_radius,
-            parang,
-            dit_science,
-            dit_psf_template,
-            scaling_factor=1,
-            checkpoint_dir=None):
+            science_sequence: np.ndarray,
+            psf_template: np.ndarray,
+            psf_fwhm_radius: float,
+            parang_rad: np.ndarray,
+            dit_science: float,
+            dit_psf_template: float,
+            scaling_factor: float = 1,
+            checkpoint_dir: Optional[Union[str, Path]] = None
+    ):
+        """
+        Constructor of the class. The Contrast class can be used with and
+        without a checkpoint_dir. If a checkpoint_dir is given intermediate
+        results (such as residuals with fake planets) can be restored.
+
+        Args:
+            science_sequence: A 3d numpy array of the observation
+                sequence without any fake planets.
+            psf_template: A 2d numpy array with the psf-template
+                (usually the unsaturated star).
+            psf_fwhm_radius: The FWHM (radius) of the PSF. It is needed to
+                sample independent noise values i.e. it determines the
+                spacing between the noise observations which are extracted
+                from the residuals.
+            parang_rad: A 1d numpy array containing the parallactic angles
+                in radians.
+            dit_science: Integration time of the science frames.
+            dit_psf_template: Integration time of the psf_template.
+            scaling_factor: A scaling factor to account for e.g. ND filters.
+            checkpoint_dir: A directory in which intermediate results are
+                stored. Within the checkpoint_dir three subdirectories are
+                created:
+
+                    1. configs_cgrid: This folder will contain several
+                    .json config files which define where to insert fake
+                    planets. The config files are created within
+                    :meth:`~design_fake_planet_experiments`.
+
+                    2. residuals: This folder contains the results of the
+                    post-processing algorithm used. E.g. PCA residuals.
+                    The results are calculated in
+                    :meth:`~run_fake_planet_experiments`.
+
+                    3. scratch: A scratch folder which can be used by the
+                    post-processing algorithm to store files.
+        """
 
         self.science_sequence = science_sequence
         self.psf_template = psf_template
-        self.parang = parang
+        self.parang_rad = parang_rad
         self.dit_science = dit_science
         self.dit_psf_template = dit_psf_template
         self.scaling_factor = scaling_factor
@@ -66,19 +107,55 @@ class Contrast:
     @classmethod
     def create_from_checkpoint_dir(
             cls,
-            psf_template,
-            psf_fwhm_radius,
-            dit_science,
-            dit_psf_template,
-            checkpoint_dir,
-            scaling_factor=1):
+            psf_template: np.ndarray,
+            psf_fwhm_radius: float,
+            dit_science: float,
+            dit_psf_template: float,
+            checkpoint_dir: Union[str, Path],
+            scaling_factor: float = 1) -> Contrast:
+        """
+        A factory method which can be used to restore a Contrast instance from
+        a checkpoint_dir. This function can be used to load results calculated
+        earlier with :meth:`~run_fake_planet_experiments`. It is further useful
+        to load results of more complex post-processing methods computed on
+        a cluster.
+
+        Args:
+            psf_template: A 2d numpy array with the psf-template
+                (usually the unsaturated star).
+            psf_fwhm_radius: The FWHM (radius) of the PSF. It is needed to
+                sample independent noise values i.e. it determines the
+                spacing between the noise observations which are extracted
+                from the residuals.
+            dit_science: Integration time of the science frames.
+            dit_psf_template: Integration time of the psf_template.
+            checkpoint_dir: The directory in which intermediate results are
+                stored. It has to contain three subdirectories:
+
+                    1. configs_cgrid: This folder contains several .json config
+                    files which define where fake planets have been inserted.
+
+                    2. residuals: This folder contains the results of the
+                    post-processing algorithm used. E.g. PCA residuals.
+
+                    3. scratch: A scratch folder which can be used by the
+                    post-processing algorithm to store files.
+
+            scaling_factor: A scaling factor to account for e.g. ND filters.
+
+        Returns:
+            An instance of Contrast ready to run
+            :meth:`~prepare_contrast_results`
+            :meth:`~compute_analytic_contrast_curves` and
+            :meth:`~compute_contrast_grids`.
+        """
 
         # 1.) Create an instance of Contrast
         contrast_instance = cls(
-            science_sequence=None,
+            science_sequence=np.empty(0),
             psf_template=psf_template,
             psf_fwhm_radius=psf_fwhm_radius,
-            parang=None,
+            parang_rad=np.empty(0),
             dit_science=dit_science,
             dit_psf_template=dit_psf_template,
             scaling_factor=scaling_factor,
@@ -113,10 +190,36 @@ class Contrast:
 
     def design_fake_planet_experiments(
             self,
-            flux_ratios,
-            num_planets=6,
-            separations=None,
-            overwrite=False):
+            flux_ratios: np.ndarray,
+            num_planets: int = 6,
+            separations: Optional[np.ndarray] = None,
+            overwrite: bool = False
+    ) -> None:
+        """
+        Calculates the positions at which fake planets are inserted. For each
+        fake planet experiment one .json config file is created (in case a
+        checkpoint_dir is available). **This function is the first step to
+        calculate a contrast curve or contrast grid**.
+
+        Args:
+            flux_ratios: A list / single value of planet-to-star
+                flux_ratios used for the fake planets to be injected.
+                If you want to calculate a simple contrast curve this values
+                should be below the expected detection limit.
+                For the computation of a contrast grid several flux_ratios are
+                needed.
+            num_planets: The number of planets to be inserted. Has to be
+                between 1 (minimum) and 6 (maximum). More planets result in more
+                accurate results but also longer computation time.
+            separations: Separations at which fake planets are inserted [pixel].
+                By default, (If set to None) separations are selected in steps
+                of 1 FWHM form the central star to the edge of the image.
+            overwrite: Check if config files exist already within the
+                checkpoint_dir. Overwrite allows to overwrite already existing
+                files. The default behaviour will raise an error.
+
+        """
+        # TODO add link to the notebook
 
         # 1. Calculate test positions for the fake planets
         # Take the first image of the science_sequence as a test_image
@@ -145,8 +248,24 @@ class Contrast:
 
     def _check_residuals_exist_and_restore(
             self,
-            algorithm_function,
-            fake_planet_id):
+            algorithm_function: DataReductionInterface,
+            exp_id: str
+    ) -> Union[bool, Dict[str, np.ndarray]]:
+        """
+        Checks the residual directory for already existing residuals. If all
+        residuals needed exist already they are restored and returned.
+
+        Args:
+            algorithm_function: The post-processing method used to calculate
+                the residuals (e.g. PCA).
+            exp_id: Experiment ID of the config used to add the fake
+                planet.
+
+        Returns:
+            False if residuals to not exist. Returns a dict with the restored
+            residuals if all residuals are found.
+
+        """
 
         method_keys = algorithm_function.get_method_keys()
         result_dict = dict()
@@ -160,7 +279,7 @@ class Contrast:
                 return False
 
             # check if the residual with the given tmp_method_key exists
-            exp_name = "residual_ID_" + fake_planet_id + ".fits"
+            exp_name = "residual_ID_" + exp_id + ".fits"
             tmp_file = tmp_sub_dir / exp_name
 
             # if it does not exist we can return false
@@ -176,7 +295,25 @@ class Contrast:
     def _run_fake_planet_experiment(
             self,
             algorithm_function: DataReductionInterface,
-            exp_id):
+            exp_id: str
+    ) -> Tuple[str, Dict[str, np.ndarray]]:
+        """
+        Runs a single fake planet experiment by adding a fake planet to the
+        planet free sequence, running the post-processing algorithm and save
+        the results as .fits (if a checkpoint_dir is available).
+        _run_fake_planet_experiment is used for the multiprocessing
+        in :meth:`~run_fake_planet_experiments`.
+
+        Args:
+            algorithm_function: The post-processing method used to calculate
+                the residuals (e.g. PCA). See `wrappers <utils.html#wrappers>`_
+                for an examples.
+            exp_id:  Experiment ID of the config used to add the fake
+                planet.
+
+        Returns: The exp_id and finished residual as a tuple.
+
+        """
 
         experimental_setup = self.experimental_setups[exp_id]
 
@@ -197,7 +334,7 @@ class Contrast:
         stack_with_fake_planet = add_fake_planets(
             input_stack=self.science_sequence,
             psf_template=self.psf_template,
-            parang=self.parang,
+            parang=self.parang_rad,
             dit_science=self.dit_science,
             dit_psf_template=self.dit_psf_template,
             experiment_config=experimental_setup,
@@ -206,7 +343,7 @@ class Contrast:
         # 3.) Compute the residuals
         residuals = algorithm_function(
             stack_with_fake_planet,
-            self.parang,
+            self.parang_rad,
             self.psf_template,
             exp_id)
 
@@ -233,8 +370,32 @@ class Contrast:
 
     def run_fake_planet_experiments(
             self,
-            algorithm_function,
-            num_parallel):
+            algorithm_function: DataReductionInterface,
+            num_parallel: int
+    ) -> None:
+        """
+        Runs the fake planet experiments with the  post-processing algorithm
+        given as algorithm_function. Requires that fake planet experiments have
+        been defined with :meth:`~design_fake_planet_experiments` before.
+        For each fake planet experiment the following steps are executed:
+
+            1. Insert a fake planet in the observation sequence.
+
+            2. Run algorithm_function to get a residual.
+
+            3. Save the residual in case a checkpoint_dir is available.
+
+        All fake planet experiments are executed with multiprocessing.
+        **This function is the second step to calculate a contrast curve
+        or contrast grid.**
+
+        Args:
+            algorithm_function: The post-processing method used to calculate
+                the residuals (e.g. PCA). See `wrappers <utils.html#wrappers>`_
+                for examples.
+            num_parallel: The number of parallel fake planet experiments.
+
+        """
 
         # 1. Run the data reduction in parallel
         # The _run_fake_planet_experiment checks if residuals already exist
@@ -242,7 +403,7 @@ class Contrast:
         results = Parallel(n_jobs=num_parallel)(
             delayed(self._run_fake_planet_experiment)(
                 algorithm_function,
-                i) for i in self.experimental_setups.keys())
+                i) for i in self.experimental_setups)
         tmp_results_dict = dict(results)
 
         # 2. Prepare the results for the ContrastResult
@@ -263,9 +424,22 @@ class Contrast:
 
     def prepare_contrast_results(
             self,
-            photometry_mode_planet,
-            photometry_mode_noise,
-            scaling_factor=1.):
+            photometry_mode_planet: AperturePhotometryMode,
+            photometry_mode_noise: AperturePhotometryMode
+    ) -> None:
+        """
+        After running :meth:`~run_fake_planet_experiments` this function is used
+        to compute the stellar flux and prepare instances of
+        :meth:`~applefy.detections.evaluation.ContrastResult`.
+        **This function is the third step to calculate a contrast curve
+        or contrast grid.**
+
+        Args:
+            photometry_mode_planet: An instance of AperturePhotometryMode which
+                defines how the flux is measured at the planet position.
+            photometry_mode_noise: An instance of AperturePhotometryMode which
+                defines how the noise photometry is measured.
+        """
 
         # 0.) Check if run_fake_planet_experiments was executed before
         if self.results_dict is None:
@@ -279,7 +453,7 @@ class Contrast:
             dit_science=self.dit_science,
             dit_psf_template=self.dit_psf_template,
             photometry_mode=photometry_mode_planet,
-            scaling_factor=scaling_factor)
+            scaling_factor=self.scaling_factor)
 
         # 2.) For each method setup create one ContrastResult
         self.contrast_results = dict()
@@ -293,18 +467,32 @@ class Contrast:
 
             self.contrast_results[tmp_method_name] = tmp_contrast_result
 
-    def _get_result_table_index(self, pixel_scale=None):
+    def _get_result_table_index(
+            self,
+            pixel_scale: Optional[float] = None
+    ) -> pd.MultiIndex:
+        """
+        A simple helper function to contrast the pandas MultiIndex needed in
+        :meth:`~compute_analytic_contrast_curves` and
+        :meth:`~compute_contrast_grids`.
+
+        Args:
+            pixel_scale: The pixel scale in arcsec.
+
+        Returns: The pandas MultiIndex with separations in FWHM as well as
+            arcsec.
+        """
 
         example_contrast_result = next(iter(self.contrast_results.values()))
-        separations_lambda_d = \
+        separations_fwhm_d = \
             [i / self.psf_fwhm_radius * 2
              for i in example_contrast_result.idx_table.index]
 
-        # create the index in lambda / D and arcsec
+        # create the index in FWHM and arcsec
         if pixel_scale is None:
             separation_index = pd.Index(
-                separations_lambda_d,
-                name=r"separation [$\lambda/D$]")
+                separations_fwhm_d,
+                name=r"separation [FWHM]")
 
         else:
             separations_arcsec = \
@@ -312,7 +500,7 @@ class Contrast:
                  for i in example_contrast_result.idx_table.index]
 
             separation_index = pd.MultiIndex.from_tuples(
-                list(zip(separations_lambda_d, separations_arcsec)),
+                list(zip(separations_fwhm_d, separations_arcsec)),
                 names=[r"separation [$\lambda/D$]",
                        "separation [arcsec]"])
 
@@ -320,10 +508,44 @@ class Contrast:
 
     def compute_analytic_contrast_curves(
             self,
-            test_statistic,
-            confidence_level_fpf,
-            num_rot_iter=20,
-            pixel_scale=None):
+            statistical_test: TestInterface,
+            confidence_level_fpf: float,
+            num_rot_iter: int = 20,
+            pixel_scale: Optional[float] = None
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Computes analytic contrast curves as shown in [ref]. Requires a
+        previous execution of :meth:`~prepare_contrast_results`. If the
+        post-processing method used in :meth:`~run_fake_planet_experiments`
+        returns multiple residuals (e.g. for different numbers of PCA
+        components) the output contains multiple contrast curves summarized
+        in one pandas table.
+
+        Args:
+            statistical_test: The test used to constrain the planet flux
+                needed in order to be counted as a detection.
+                For the classical TTest (Gaussian noise) use an instance of
+                :meth:`~applefy.statistics.parametric.TTest`. For Laplacian
+                noise use
+                :meth:`~applefy.statistics.bootstrapping.LaplaceBootstrapTest`.
+            confidence_level_fpf: The confidence level associated with the
+                contrast curve as false-positive fraction (FPF).
+            num_rot_iter: Number of tests performed with different positions of
+                the noise values. See
+                `Figure 02 <../05_apples_with_apples/paper_experiments/\
+02_Rotation.ipynb>`_
+                for more information.
+            pixel_scale: The pixel scale in arcsec. If given the result table
+                will have a multi index.
+
+        Returns:
+            1. A pandas DataFrame with the median contrast curves over all
+            num_rot_iter.
+
+            2. A pandas DataFrame with the MAD error of the contrast curves over
+            all  num_rot_iter.
+        """
+        # TODO add link to the paper / notebook
 
         # 0.) Check if prepare_contrast_results was executed before
         if self.contrast_results is None:
@@ -339,7 +561,7 @@ class Contrast:
             print("Computing contrast curve for " + str(key))
             tmp_contrast_curve, tmp_contrast_curve_error = \
                 tmp_result.compute_contrast_curve(
-                    test_statistic=test_statistic,
+                    test_statistic=statistical_test,
                     num_rot_iter=num_rot_iter,
                     confidence_level_fpf=confidence_level_fpf)
 
@@ -363,12 +585,50 @@ class Contrast:
 
     def compute_contrast_grids(
             self,
-            test_statistic,
-            num_cores,
-            confidence_level_fpf,
-            safety_margin=1.0,
-            num_rot_iter=20,
-            pixel_scale=None):
+            statistical_test: TestInterface,
+            num_cores: int,
+            confidence_level_fpf: float,
+            safety_margin: float = 1.0,
+            num_rot_iter: int = 20,
+            pixel_scale: Optional[float] = None
+    ) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        """
+        Computes contrast_grids as shown in [ref]. Requires a previous execution
+        of :meth:`~prepare_contrast_results`. If the post-processing method used
+        in :meth:`~run_fake_planet_experiments` returns multiple residuals
+        (e.g. for different numbers of PCA components) the output contains
+        multiple contrast grids. The results are computed using multiprocessing.
+
+        Args:
+            statistical_test: The test used to constrain the planet flux
+                needed in order to be counted as a detection.
+                For the classical TTest (Gaussian noise) use an instance of
+                :meth:`~applefy.statistics.parametric.TTest`. For Laplacian
+                noise use
+                :meth:`~applefy.statistics.bootstrapping.LaplaceBootstrapTest`.
+            num_cores: Number of parallel jobs used during multiprocessing.
+            confidence_level_fpf: The confidence level associated with the
+                contrast curve as false-positive fraction (FPF).
+                See return values.
+            safety_margin: Area around the planet [pixel] which is excluded from
+                the noise. This can be useful in case the planet has negative
+                wings.
+            num_rot_iter: Number of tests performed with different positions of
+                the noise values. See
+                `Figure 02 <../05_apples_with_apples/paper_experiments/\
+02_Rotation.ipynb>`_
+                for more information.
+            pixel_scale: The pixel scale in arcsec. If given the result table
+                will have a multi index.
+
+        Returns:
+            1. A pandas DataFrame with the contrast curves obtained by
+            thresholding the contrast grids.
+
+            2. A dict with one contrast grid for each output of the
+            post-processing routine.
+        """
+        # TODO add link to the paper / notebook
 
         # 0.) Check if prepare_contrast_results was executed before
         if self.contrast_results is None:
@@ -385,7 +645,7 @@ class Contrast:
 
             tmp_contrast_map, tmp_contrast_map_curve = \
                 tmp_result.compute_contrast_grid(
-                    test_statistic=test_statistic,
+                    test_statistic=statistical_test,
                     num_cores=num_cores,
                     num_rot_iter=num_rot_iter,
                     safety_margin=safety_margin,
@@ -403,3 +663,70 @@ class Contrast:
             [np.inf, -np.inf], np.inf)
 
         return pd_contrast_curves, contrast_grids
+
+
+class DataReductionInterface(ABC):
+    """
+    Applefy allows to compute contrast curves with different post-processing
+    algorithms. However, it does not come with any implementation of these
+    techniques. Instead, we use existing implementations in packages like
+    `PynPoint <https://pynpoint.readthedocs.io/en/latest/>`_ or
+    `VIP <https://vip.readthedocs.io/en/latest/>`_.
+    The DataReductionInterface is an interface which guarantees that these
+    external implementations can be used within applefy.
+    See `wrappers <utils.html#wrappers>`_ for an examples.
+    """
+    # TODO change Wrapper link
+
+    @abstractmethod
+    def get_method_keys(self) -> List[str]:
+        """
+        The get_method_keys should return the name (or names) of the method
+        implemented. The name(s) should match the keys of the result dict
+        created by __call__.
+
+        Returns:
+            A list containing the name(s) of the method. If __call__ computes
+            only a single residual the return value should be a list containing
+            a single string. If __call__ has multiple outputs (e.g. PCA
+            residuals with different number of components) the list should
+            contain one name for each entry in the result dict of __call__.
+        """
+
+    @abstractmethod
+    def __call__(
+            self,
+            stack_with_fake_planet: np.ndarray,
+            parang_rad: np.ndarray,
+            psf_template: np.ndarray,
+            exp_id: str
+    ) -> Dict[str, np.ndarray]:
+        """
+        In order to make external post-processing methods compatible with
+        applefy they have to implement the __call__ function. __call__ should
+        run the post-processing algorithm and return its result(s) /
+        residual(s). It is possible to return multiple result (e.g. for
+        different parameters of the post-processing algorithm) as a dict.
+
+        Args:
+             stack_with_fake_planet: A 3d numpy array of the observation
+                sequence. Fake plants are inserted by applefy in advance.
+             parang_rad:
+                A 1d numpy array containing the parallactic angles in radians.
+             psf_template: A 2d numpy array with the psf-template
+                (usually the unsaturated star).
+             exp_id: Experiment ID of the config used to add the fake
+                planet. It is a unique string and can be used to store
+                intermediate results. See :meth:`~applefy.detections.\
+preparation.generate_fake_planet_experiments` for more information about the
+                config files.
+
+        Returns:
+            A dictionary which contains the results / residuals of the
+            post-processing algorithm. Each entry in the dict should give one
+            result, while the key specifies the name of the method used. If
+            e.g. PCA with different number of components is used the dict
+            contains one residual for each number of components. The keys of
+            the dict have to match those specified in :meth:`get_method_keys`.
+
+        """
