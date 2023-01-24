@@ -10,6 +10,8 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from __future__ import annotations
+
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
@@ -35,12 +37,29 @@ extensions = ['sphinx.ext.napoleon',
               'nbsphinx',
               'sphinx_copybutton',
               'sphinx_gallery.load_style',
-              'myst_parser']
+              'myst_parser',
+              'sphinx_autodoc_typehints',
+              'sphinx.ext.intersphinx']
 
 # Gallery style
 sphinx_gallery_conf = {
     'thumbnail_size': (50, 50)
 }
+
+napoleon_use_param = True
+autodoc_member_order = 'bysource'
+
+autodoc_default_options = {
+    "members": True, "undoc-members": True, "show-inheritance": True}
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "packaging": ("https://packaging.pypa.io/en/latest", None),
+    "numpy": ('https://numpy.org/doc/stable/', None),
+    "pandas": ('https://pandas.pydata.org/docs/', None)
+}
+
+simplify_optional_unions = False
 
 # The master toctree document.
 master_doc = 'index'
