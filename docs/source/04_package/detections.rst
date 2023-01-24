@@ -1,6 +1,12 @@
 Detections
 ==========
 
+Contrast
+-----------
+.. automodule:: applefy.detections.contrast
+   :members:
+   :special-members: __call__, __init__
+
 Preparation
 -----------
 .. automodule:: applefy.detections.preparation
