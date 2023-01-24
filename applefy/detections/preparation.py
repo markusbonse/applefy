@@ -76,7 +76,11 @@ def generate_fake_planet_experiments(
         0000 is the experiment with no fake planets.
 
     Args:
-        flux_ratios:  List of flux_ratios to be studied [float,]
+        flux_ratios:  A list of the planet-to-star flux_ratios used for the
+            fake planets. If you want to calculate a simple contrast curve the
+            list should contain a single value smaller than the expected
+             detection limit. For the computation of a contrast grid several
+             flux_ratios are needed.
         planet_positions: planet positions given by
             calculate_planet_apertures
 
@@ -169,11 +173,11 @@ def create_and_save_configs(test_img,
         flux_ratios: List of flux_ratios to be studied [float,]
         experiment_config_dir: Destination where config files are stored
         num_planets: The number of planets to be inserted (int). Has to be
-            between 1 (minimum) and 6 (maximum). More planets provide more
-            accuracy of the results.
+            between 1 (minimum) and 6 (maximum). More planets result in more
+            accurate results but also longer computation time.
         separations: Separations at which fake planets are inserted [pixel].
             By default, (If set to None) separations are selected in steps of
-            1 lambda/D for the center to the edge of the test image:
+            1 FWHM for the center to the edge of the test image:
                 np.arange(0, center[0], aperture_radius * 2)[1:]
 
     Returns: None
