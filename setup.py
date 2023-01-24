@@ -44,7 +44,8 @@ setup(
                 # needed for syntax highlighting in jupyter notebooks
                 "IPython",
                 # spell checking in jupyter notebooks
-                "jupyter_contrib_nbextensions"],
+                "jupyter_contrib_nbextensions",
+                "sphinx-autodoc-typehints"],
         "fast_sort": ["parallel_sort==0.0.3", ],
         "plotting": ["seaborn", "matplotlib"],
     },
