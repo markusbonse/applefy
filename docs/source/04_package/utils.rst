@@ -20,3 +20,8 @@ General
 -------
 .. automodule:: applefy.utils.general
    :members:
+
+Wrappers
+-------
+.. automodule:: applefy.wrappers.pynpoint
+   :members:
