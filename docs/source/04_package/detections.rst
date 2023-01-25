@@ -7,17 +7,10 @@ Contrast
    :members:
    :special-members: __call__, __init__
 
-Preparation
------------
-.. automodule:: applefy.detections.preparation
-   :members:
+.. toctree::
+    :maxdepth: 2
+    :hidden:
 
-Execution
----------
-.. automodule:: applefy.detections.execution
-   :members:
-
-Evaluation
-----------
-.. automodule:: applefy.detections.evaluation
-   :members:
+    contrast_steps/preparation
+    contrast_steps/execution
+    contrast_steps/evaluation

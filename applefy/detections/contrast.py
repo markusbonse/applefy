@@ -15,16 +15,22 @@ import pandas as pd
 import numpy as np
 from joblib import Parallel, delayed
 
-from applefy.utils.data_handling import save_as_fits, open_fits, \
+from applefy.utils.file_handling import save_as_fits, open_fits, \
     create_checkpoint_folders, search_for_config_and_residual_files
-from applefy.utils.aperture_photometry import AperturePhotometryMode
+from applefy.utils.photometry import AperturePhotometryMode
 from applefy.statistics.general import TestInterface
 
-from applefy.detections.preparation import calculate_planet_positions, \
-    generate_fake_planet_experiments, save_experiment_configs
-from applefy.detections.execution import add_fake_planets
-from applefy.detections.evaluation import estimate_stellar_flux, \
-    ContrastResult, read_results
+from applefy.utils.file_handling import save_experiment_configs, \
+    read_fake_planet_results
+from applefy.utils.fake_planets import calculate_fake_planet_positions, \
+    generate_fake_planet_experiments, add_fake_planets
+from applefy.utils.photometry import estimate_stellar_flux
+from applefy.utils.fake_planets import sort_fake_planet_results, \
+    merge_fake_planet_residuals
+from applefy.utils.throughput import compute_throughput_table
+from applefy.utils.contrast_curve import compute_contrast_curve
+from applefy.utils.contrast_map import compute_contrast_map, \
+    compute_contrast_from_map
 
 
 class Contrast:
@@ -183,7 +189,7 @@ class Contrast:
                 method_dir=tmp_method_dir)
 
             # restore the results
-            tmp_results = read_results(result_files)
+            tmp_results = read_fake_planet_results(result_files)
             contrast_instance.results_dict[tmp_method_dir.name] = tmp_results
 
         return contrast_instance
@@ -225,7 +231,7 @@ class Contrast:
         # Take the first image of the science_sequence as a test_image
         test_image = self.science_sequence[0]
 
-        planet_positions = calculate_planet_positions(
+        planet_positions = calculate_fake_planet_positions(
             test_img=test_image,
             psf_fwhm_radius=self.psf_fwhm_radius,
             num_planets=num_planets,
@@ -532,8 +538,7 @@ class Contrast:
                 contrast curve as false-positive fraction (FPF).
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../05_apples_with_apples/paper_experiments/\
-02_Rotation.ipynb>`_
+                `Figure 02 <../05_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
                 for more information.
             pixel_scale: The pixel scale in arcsec. If given the result table
                 will have a multi index.
@@ -615,8 +620,7 @@ class Contrast:
                 wings.
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../05_apples_with_apples/paper_experiments/\
-02_Rotation.ipynb>`_
+                `Figure 02 <../05_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
                 for more information.
             pixel_scale: The pixel scale in arcsec. If given the result table
                 will have a multi index.
@@ -665,6 +669,204 @@ class Contrast:
         return pd_contrast_curves, contrast_grids
 
 
+class ContrastResult(object):
+    """
+    Wrapper class for the evaluation and organization of residuals from one
+    method (e.g. pca with 10 components). Supports both contrast curves and
+    contrast maps.
+    """
+
+    def __init__(
+            self,
+            model_results,
+            stellar_flux,
+            planet_photometry_mode: AperturePhotometryMode,
+            noise_photometry_mode: AperturePhotometryMode,
+            psf_fwhm_radius):
+        # TODO change documentation
+        """
+        Constructor of the class. This function will read in all residuals and
+        compute the throughput table.
+
+        Args:
+            model_results: List which contains the path to the residuals and
+                corresponding config files. List items have to be structured
+                like: (path to config file, path to the residual)
+            stellar_flux: The stellar flux measured with estimate_stellar_flux.
+                The mode used to get the stellar flux has to be the same as used
+                given in planet_mode.
+            planet_photometry_mode: An instance of AperturePhotometryMode which
+                defines how the flux is measured at the planet positions.
+            noise_photometry_mode: An instance of AperturePhotometryMode which
+                defines how the flux is measured at the noise positions.
+            psf_fwhm_radius: Determines the spacing between residual elements.
+                Usually, it is the radius of one FWHM (pixel).
+        """
+
+        # Init additional members needed for flux based estimations
+        self.stellar_flux = stellar_flux
+
+        # Check if photometry_modes are compatible
+        if not planet_photometry_mode.check_compatible(noise_photometry_mode):
+            raise ValueError("Photometry modes " +
+                             planet_photometry_mode.flux_mode + " and " +
+                             noise_photometry_mode.flux_mode + " are not"
+                             " compatible.")
+
+        # Save the inputs
+        self.psf_fwhm_radius = psf_fwhm_radius
+        self.planet_mode = planet_photometry_mode
+        self.noise_mode = noise_photometry_mode
+
+        # Read in the results
+        read_in = sort_fake_planet_results(model_results)
+        self.fp_residual, self.planet_dict, self.idx_table = read_in
+
+        # In case throughput values are computed later we initialize the member
+        # variables here
+        self.throughput_dict = None
+        self.median_throughput_table = None
+
+    def compute_throughput(self):
+        """
+        Computes the throughput table and saves it internally.
+
+        Returns: Pandas table which contains the median throughput
+            as a function of separation and inserted flux_ratio
+        """
+
+        if self.median_throughput_table is not None:
+            return self.median_throughput_table
+
+        self.throughput_dict, self.median_throughput_table = \
+            compute_throughput_table(self.planet_dict,
+                                     self.fp_residual,
+                                     self.idx_table,
+                                     self.stellar_flux,
+                                     photometry_mode_planet=self.planet_mode)
+
+        return self.median_throughput_table
+
+    @property
+    def residuals(self):
+        """
+        Returns: A numpy array which combines all residuals from all experiments
+            Shape (num_separations, num_flux_ratios, num_planets, x, y)
+        """
+        return merge_fake_planet_residuals(self.planet_dict,
+                                           self.idx_table)
+
+    def compute_contrast_curve(
+            self,
+            confidence_level_fpf,
+            test_statistic,
+            num_rot_iter=100):
+        """
+        Computes a contrast curve given a confidence levels and test statistic.
+        This is the analytic computation of a contrast curve that is only
+        consistent with PSF-subtraction algorithms such as PCA. For other
+        algorithms compute a contrast_map.
+
+        Args:
+            confidence_level_fpf: A single fpf value (float) or a list of fpf
+                values. In case a list is given the number of fpf values has to
+                match the number of evaluated separations.
+            test_statistic: The test statistic used to constrain the planet flux
+                needed. For classical TTest curves use an instance of
+                apelfei.statistics.parametric.TTest.
+            num_rot_iter: Number of tests performed with different noise
+                positions.
+
+        Returns: Tuple of:
+            - A 1D table containing the median contrast values.
+            - A 1D table containing the mad-error of the contrast curves caused
+                by the positioning of the noise element positions.
+        """
+
+        if self.median_throughput_table is None:
+            self.compute_throughput()
+
+        median_contrast_curve, contrast_error, _ = compute_contrast_curve(
+            # use the last row of the throughput table as the throughput
+            throughput_list=self.median_throughput_table.T.iloc[-1],
+            stellar_flux=self.stellar_flux,
+            fp_residual=self.fp_residual,
+            confidence_level_fpf=confidence_level_fpf,
+            test_statistic=test_statistic,
+            psf_fwhm_radius=self.psf_fwhm_radius,
+            photometry_mode_noise=self.noise_mode,
+            num_rot_iter=num_rot_iter)
+
+        # wrap contrast curves into pandas arrays
+        median_contrast_curve = pd.DataFrame(
+            median_contrast_curve,
+            index=self.idx_table.index,
+            columns=["contrast", ])
+
+        contrast_error = pd.DataFrame(
+            contrast_error,
+            index=self.idx_table.index,
+            columns=["MAD of contrast", ])
+
+        return median_contrast_curve, contrast_error
+
+    def compute_contrast_grid(
+            self,
+            test_statistic,
+            num_cores=1,
+            num_rot_iter=20,
+            safety_margin=1.0,
+            confidence_level_fpf=None):
+        """
+        Function which calculates the contrast map i.e. how confident are we,
+        that a certain detection is possible at separations s and flux_ratio f.
+        The planet flux is given by stellar_flux * flux_ratio * throughput.
+        The test accounts for effects caused by the rotation of reference
+        aperture positions during the SNR estimation.
+
+        Args:
+            test_statistic: The test statistic used to constrain the planet flux
+                needed. For classical TTest curves use an instance of
+                apelfei.statistics.parametric.TTest.
+            num_cores: Number of parallel processes used to calculate the
+                contrast map.
+            num_rot_iter: Number of tests performed with different noise
+                positions.
+            safety_margin: Area around the planet which is excluded from the
+                noise. This can be useful in case the planet has negative wings.
+            confidence_level_fpf: If set to a float value the output contrast
+                map will be interpolated and transformed into a contrast curve.
+                if None only the contrast map is returned.
+
+        Returns: The contrast map for the chosen test. We report the median
+            p-values over all num_rot_iterations experiments performed.
+            If contrast_curve_fpf is a float a 1D pandas array containing the
+            contrast curve is returned as well.
+
+        """
+
+        contrast_map = compute_contrast_map(
+            planet_dict=self.planet_dict,
+            idx_table=self.idx_table,
+            test_statistic=test_statistic,
+            psf_fwhm_radius=self.psf_fwhm_radius,
+            photometry_mode_planet=self.planet_mode,
+            photometry_mode_noise=self.noise_mode,
+            num_cores=num_cores,
+            num_rot_iter=num_rot_iter,
+            safety_margin=safety_margin)
+
+        if isinstance(confidence_level_fpf, (float, np.floating)):
+            # compute the contrast curve
+            contrast_curve = compute_contrast_from_map(
+                contrast_map,
+                confidence_level_fpf)
+
+            return contrast_map, contrast_curve
+
+        return contrast_map
+
+
 class DataReductionInterface(ABC):
     """
     Applefy allows to compute contrast curves with different post-processing
@@ -674,7 +876,7 @@ class DataReductionInterface(ABC):
     `VIP <https://vip.readthedocs.io/en/latest/>`_.
     The DataReductionInterface is an interface which guarantees that these
     external implementations can be used within applefy.
-    See `wrappers <utils.html#wrappers>`_ for an examples.
+    See `wrappers <utils.html#wrappers>`_ for examples.
     """
     # TODO change Wrapper link
 

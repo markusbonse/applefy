@@ -2,7 +2,9 @@
 Simple helper functions to handle data
 """
 import os
+import json
 import h5py
+import warnings
 from pathlib import Path
 from astropy.io import fits
 import numpy as np
@@ -167,3 +169,57 @@ def open_fits(file_name):
         del hdul
 
     return data
+
+
+def save_experiment_configs(
+        experimental_setups,
+        experiment_config_dir,
+        overwrite=False):
+
+    # check if the config dir is empty
+    if any([i.suffix == ".json" for i in experiment_config_dir.iterdir()]):
+        if not overwrite:
+            raise FileExistsError(
+                "The directory \"" + str(experiment_config_dir) + "\" already "
+                "contains config files. Delete them if you want to create a "
+                "new experiment setup or use overwrite=True to automatically "
+                " remove them.")
+
+        print("Overwriting existing config files.")
+        for tmp_file in experiment_config_dir.iterdir():
+            if tmp_file.suffix == ".json":
+                tmp_file.unlink()
+
+    for tmp_id, tmp_config in experimental_setups.items():
+        with open(os.path.join(
+                experiment_config_dir,
+                "exp_ID_" + str(tmp_id) + ".json"),
+                'w') as f:
+            json.dump(tmp_config,
+                      f, indent=4)
+
+
+def read_fake_planet_results(result_files):
+    load_results = []
+
+    for tmp_input in result_files:
+        tmp_config_path, tmp_residual_path = tmp_input
+
+        # 1.) load the residual, ignore non-existing files
+        if not os.path.isfile(tmp_residual_path):
+            warnings.warn("File " + str(tmp_residual_path) + "not found")
+            continue
+
+        if not os.path.isfile(tmp_config_path):
+            warnings.warn("File " + str(tmp_config_path) + "not found")
+            continue
+
+        tmp_residual = np.squeeze(open_fits(tmp_residual_path))
+
+        # 1.1) load the config file
+        with open(tmp_config_path) as json_file:
+            tmp_setup_config = json.load(json_file)
+
+        load_results.append((tmp_setup_config, tmp_residual))
+
+    return load_results

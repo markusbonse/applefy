@@ -8,7 +8,7 @@ from photutils import aperture_photometry, CircularAperture
 from astropy.modeling import models, fitting
 from abc import ABC, abstractmethod
 
-from applefy.utils.aperture_positions import get_number_of_apertures,\
+from applefy.utils.positions import get_number_of_apertures,\
     estimate_aperture_positions, estimate_reference_positions
 from applefy.utils.general import center_subpixel
 
@@ -415,3 +415,37 @@ class IterNoiseForPlanet(IterNoise):
             psf_fwhm_radius=self.psf_fwhm_radius,
             angle_offset=tmp_angle_offset,
             safety_margin=self.safety_margin)
+
+
+def estimate_stellar_flux(
+        psf_template,
+        dit_science,
+        dit_psf_template,
+        photometry_mode: AperturePhotometryMode,
+        scaling_factor=1.0):
+    """
+    Function to estimate the normalized flux of the star given an unsaturated
+    PSF image
+
+    Args:
+        psf_template: 2D array of the unsaturated PSF
+        dit_science: Integration time of the science frames
+        dit_psf_template: Integration time of unsaturated PSF
+        scaling_factor: A scaling factor to account for ND filters.
+        photometry_mode: An instance of AperturePhotometryMode which defines
+            how the stellar flux is measured.
+
+    Returns: The stellar flux (float)
+
+    """
+
+    # Account for the integration time of the psf template
+    integration_time_factor = dit_science / dit_psf_template * scaling_factor
+    psf_norm = psf_template * integration_time_factor
+
+    center = center_subpixel(psf_norm)
+
+    _, flux = get_flux(psf_norm, center,
+                       photometry_mode=photometry_mode)
+
+    return flux
