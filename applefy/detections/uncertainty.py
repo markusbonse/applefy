@@ -1,3 +1,5 @@
+from typing import List, Dict, Optional, Union, Tuple, Any
+
 import numpy as np
 
 from applefy.statistics.general import TestInterface
@@ -5,49 +7,62 @@ from applefy.utils.photometry import AperturePhotometryMode, get_flux, \
     IterNoiseForPlanet
 
 
-# TODO -> uncertainty
-def compute_detection_confidence(
-        frame,
-        planet_position,
-        test_statistic: TestInterface,
-        psf_fwhm_radius,
+def compute_detection_uncertainty(
+        frame: np.ndarray,
+        planet_position: Union[Tuple[float, float],
+                               Tuple[float, float, float, float]],
+        statistical_test: TestInterface,
+        psf_fwhm_radius: float,
         photometry_mode_planet: AperturePhotometryMode,
         photometry_mode_noise: AperturePhotometryMode,
-        num_rot_iter=20,
-        safety_margin=1.0):
+        safety_margin: float = 1.0,
+        num_rot_iter: int = 20
+) -> Tuple[float, np.ndarray, np.ndarray]:
     """
-    Function to estimate the confidence that an observation at planet_position
-    in a frame (residual or detection map) is actually a planet. The test
-    supports all test statistics implemented in apelfei.statistics and accounts
-    for the effect of where the reference positions are placed.
+    Function to estimate the uncertainty (p-value) that a potential planet at
+    a given position in a residual is not noise. The function supports
+    several `tests <statistics.html>`_ and accounts for the effect of where the
+    noise is extracted from the residual (see
+    `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_)
 
     Args:
-        frame: The frame on which we want to estimate the confidence (2D array)
-        planet_position: The position of where the planet is expected (pixel)
-            If photometry_mode_planet is set to a mode that supports search the
+        frame: The residual on which we want to estimate the detection
+            uncertainty.
+        planet_position: The position of where the planet is expected. Can
+            either be a position as (x_pos, y_pos) or
+            (x_pos, y_pos, separation, angle).
+            If photometry_mode_planet is set to a mode that supports search, the
             area around planet_position is explored to maximize the planet flux.
-        test_statistic: The test statistic used
-        psf_fwhm_radius: The size (radius) of resolution elements. It is used
-            to sample independent noise values i.e. it sets the spacing between
-            noise observations sampled from the fp_residual.
+        statistical_test: The test used to constrain the planet flux
+            needed to be counted as a detection.
+            For the classical TTest (Gaussian noise) use an instance of
+            :meth:`~applefy.statistics.parametric.TTest`. For Laplacian
+            noise use
+            :meth:`~applefy.statistics.bootstrapping.LaplaceBootstrapTest`.
+        psf_fwhm_radius: The FWHM (radius) of the PSF. It is needed to
+                sample independent noise values i.e. it determines the
+                spacing between the noise observations which are extracted
+                from the residuals.
         photometry_mode_planet: An instance of AperturePhotometryMode which
-            defines how the planet photometry is measured.
+            defines how the flux is measured at the planet position.
         photometry_mode_noise: An instance of AperturePhotometryMode which
             defines how the noise photometry is measured.
-        num_rot_iter: Number of tests performed with different noise
-            aperture positions. The classical Mawet et al. 2014 contrast curves
-            do not consider this source of error.
-        safety_margin: Area around the planet which is excluded from the noise.
-            This can be useful in case the planet has negative wings.
+        num_rot_iter: Number of tests performed with different positions of
+            the noise values. See
+            `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+            for more information.
+        safety_margin: Area around the planet [pixel] which is excluded from
+            the noise. This can be useful in case the planet has negative wings.
 
     Returns:
-        Tuple of:
-            median_confidence_fpf - The median of all num_rot_iterations
-                confidence level estimates (p-values /fpf)
-            confidences_fpf - 1D numpy array with all num_rot_iterations
-                confidence level estimates (p-values /fpf)
-            tau_statistic - 1D numpy array with all num_rot_iterations
-                estimates of the test statistic tau (SNR)
+        1. The median of all num_rot_iter confidence level estimates
+        (p-values /fpf).
+
+        2. 1D numpy array with all num_rot_iter confidence level estimates
+        (p-values /fpf).
+
+        3. 1D numpy array with all num_rot_iter estimates of the test
+        statistic T (SNR).
     """
 
     # 1.) make sure the photometry modes are compatible
@@ -71,10 +86,10 @@ def compute_detection_confidence(
     p_values = []
 
     for tmp_noise_sample in noise_iterator:
-        test_result = test_statistic.test_2samp(planet_photometry,
-                                                tmp_noise_sample)
+        test_result = statistical_test.test_2samp(planet_photometry,
+                                                  tmp_noise_sample)
 
         p_values.append(test_result[0])
         t_values.append(test_result[1])
 
-    return np.median(p_values), np.array(p_values), np.array(t_values)
+    return float(np.median(p_values)), np.array(p_values), np.array(t_values)

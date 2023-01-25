@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from applefy.detections.uncertainty import compute_detection_confidence
+from applefy.detections.uncertainty import compute_detection_uncertainty
 from applefy.statistics.general import TestInterface, fpf_2_gaussian_sigma
 from applefy.utils.photometry import AperturePhotometryMode, flux_ratio2mag, \
     mag2flux_ratio
@@ -33,10 +33,10 @@ def _compute_median_confidence(
         tmp_fake_planet_residual = fake_planet_residuals[i]
         tmp_planet_position = fake_planet_positions[i]
 
-        tmp_median_p, _, _ = compute_detection_confidence(
+        tmp_median_p, _, _ = compute_detection_uncertainty(
             frame=tmp_fake_planet_residual,
             planet_position=tmp_planet_position,
-            test_statistic=test_statistic,
+            statistical_test=test_statistic,
             psf_fwhm_radius=psf_fwhm_radius,
             photometry_mode_planet=photometry_mode_planet,
             photometry_mode_noise=photometry_mode_noise,
