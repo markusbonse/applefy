@@ -9,8 +9,7 @@ from astropy.modeling import models, fitting
 from abc import ABC, abstractmethod
 
 from applefy.utils.positions import get_number_of_apertures,\
-    estimate_aperture_positions, estimate_reference_positions
-from applefy.utils.general import center_subpixel
+    estimate_aperture_positions, estimate_reference_positions, center_subpixel
 
 
 def flux_ratio2mag(flux_ratios):

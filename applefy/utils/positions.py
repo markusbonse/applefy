@@ -1,6 +1,7 @@
 """
 All util functions needed to estimate apertures positions
 """
+from typing import Tuple
 
 import numpy as np
 import math
@@ -116,3 +117,26 @@ def estimate_reference_positions(
     test_positions[:] = filterfalse(check_distance, test_positions)
 
     return test_positions
+
+
+def center_subpixel(image: np.ndarray) -> Tuple[float, float]:
+    """
+    Code copied from pynpoint
+
+    Function to get the precise position of the image center. The center of the
+    pixel in the bottom left corner of the image is defined as (0, 0), so the
+    bottom left corner of the image is located at (-0.5, -0.5).
+
+    Args:
+        image : np.ndarray
+            Input image (2D or 3D).
+
+    Returns:
+        tuple(float, float)
+        Subpixel position (y, x) of the image center.
+    """
+
+    center_x = float(image.shape[-1]) / 2 - 0.5
+    center_y = float(image.shape[-2]) / 2 - 0.5
+
+    return center_x, center_y

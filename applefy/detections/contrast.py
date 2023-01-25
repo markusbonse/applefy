@@ -29,7 +29,7 @@ from applefy.utils.fake_planets import sort_fake_planet_results, \
     merge_fake_planet_residuals
 from applefy.utils.throughput import compute_throughput_table
 from applefy.utils.contrast_curve import compute_contrast_curve
-from applefy.utils.contrast_map import compute_contrast_map, \
+from applefy.utils.contrast_grid import compute_contrast_map, \
     compute_contrast_from_map
 
 
@@ -538,7 +538,7 @@ class Contrast:
                 contrast curve as false-positive fraction (FPF).
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../05_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+                `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
                 for more information.
             pixel_scale: The pixel scale in arcsec. If given the result table
                 will have a multi index.
@@ -620,7 +620,7 @@ class Contrast:
                 wings.
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../05_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+                `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
                 for more information.
             pixel_scale: The pixel scale in arcsec. If given the result table
                 will have a multi index.

@@ -17,17 +17,8 @@ It contains all the code for the following research paper (see also ):
 :caption: User Documentation
 
 02_user_documentation/01_detection_uncertainty
-02_user_documentation/02_detection_limits
-```
-
-```{toctree}
-:maxdepth: 2
-:hidden:
-:caption: Tutorials
-
-03_tutorials/01_first_example
-03_tutorials/02_pynpoint
-03_tutorials/03_vip
+02_user_documentation/02_contrast_curves
+02_user_documentation/03_contrast_grid
 ```
 
 ```{toctree}
@@ -35,10 +26,11 @@ It contains all the code for the following research paper (see also ):
 :hidden:
 :caption: Package
 
-04_package/detections
-04_package/gaussianity
-04_package/statistics
-04_package/utils
+03_package/detections
+03_package/gaussianity
+03_package/statistics
+03_package/wrappers
+03_package/utils
 ```
 
 ```{toctree}
@@ -46,7 +38,7 @@ It contains all the code for the following research paper (see also ):
 :hidden:
 :caption: Publications
 
-05_apples_with_apples/01_general
+04_apples_with_apples/01_general
 ```
 
 ```{toctree}
@@ -54,5 +46,5 @@ It contains all the code for the following research paper (see also ):
 :hidden:
 :caption: About
 
-06_about
+05_about
 ```

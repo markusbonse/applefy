@@ -9,7 +9,7 @@ from sklearn.metrics import r2_score
 
 from photutils import CircularAnnulus
 
-from applefy.utils.general import center_subpixel
+from applefy.utils.positions import center_subpixel
 from applefy.utils.photometry import AperturePhotometryMode, \
     IterNoiseBySeparation
 

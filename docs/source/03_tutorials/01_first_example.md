@@ -1,3 +1,0 @@
-# First Example
-
-test page
