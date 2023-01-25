@@ -1,4 +1,9 @@
-from typing import List, Dict, Optional, Union, Tuple, Any
+"""
+Functions which can be used to estimate the uncertainty (p-value) that a
+potential planet at a given position in a residual is not noise.
+"""
+
+from typing import Union, Tuple
 
 import numpy as np
 

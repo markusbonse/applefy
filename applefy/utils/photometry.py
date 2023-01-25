@@ -134,7 +134,7 @@ def get_flux(
         position,
         photometry_mode: AperturePhotometryMode):
     """
-    Function to estimate the flux at and / or around a given position in frame.
+    Function to estimate the flux at and / or around a given position in input_residual_frame.
 
     Args:
         frame: A 2D numpy array of shape `(width, height)` containing
@@ -222,7 +222,7 @@ def get_flux(
 
         position = (gaussian_model.x_mean.value, gaussian_model.y_mean.value)
 
-        # estimate the flux on the fit frame
+        # estimate the flux on the fit input_residual_frame
         # We can not use the amplitude directly as it is not comparable with
         # noise values which are e.g. estimated in pixel mode
         fit_result = gaussian_model(x, y)

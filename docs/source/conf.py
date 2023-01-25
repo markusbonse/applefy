@@ -56,7 +56,8 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "packaging": ("https://packaging.pypa.io/en/latest", None),
     "numpy": ('https://numpy.org/doc/stable/', None),
-    "pandas": ('https://pandas.pydata.org/docs/', None)
+    "pandas": ('https://pandas.pydata.org/docs/', None),
+    "sklearn": ('https://scikit-learn.org/stable/', None)
 }
 
 simplify_optional_unions = False
