@@ -1,9 +1,10 @@
 """
-Parametric tests for contrast and detection limit calculations
+Parametric tests for contrast and detection limit calculations.
 """
+from typing import Union, List, Tuple
 
-import numpy as np
 import multiprocessing
+import numpy as np
 from scipy import stats
 from numba import njit, set_num_threads
 
@@ -15,13 +16,16 @@ from applefy.statistics.general import TestInterface
 
 
 @njit(parallel=True)
-def _t_statistic_vectorized_numba(noise_samples, planet_samples):
+def _t_statistic_vectorized_numba(
+        noise_samples: np.ndarray,
+        planet_samples: np.ndarray
+) -> np.ndarray:
     """
     Fast and parallel version of t_statistic_vectorized using numba. More
     information given in t_statistic_vectorized.
     """
-    n = noise_samples.shape[1]
-    m = 1
+    noise_size_n = noise_samples.shape[1]
+    planet_size_m = 1
 
     res = []
     for i in range(noise_samples.shape[0]):
@@ -30,50 +34,56 @@ def _t_statistic_vectorized_numba(noise_samples, planet_samples):
 
         # np.sqrt(float(n) / float(n-1)) is the ddof = 1
         noise_std = noise_samples[i, :].std() * np.sqrt(
-            1 / n + 1 / m) * np.sqrt(float(n) / float(n - 1))
-        t = (y_bar_planet - x_bar_noise) / noise_std
-        res.append(t)
+            1 / noise_size_n + 1 / planet_size_m) * \
+            np.sqrt(float(noise_size_n) / float(noise_size_n - 1))
+        statistic_t = (y_bar_planet - x_bar_noise) / noise_std
+        res.append(statistic_t)
 
     return np.array(res)
 
 
 def t_statistic_vectorized(
-        noise_samples,
-        planet_samples,
-        numba_parallel_threads=1):
+        noise_samples: Union[List[float], np.ndarray],
+        planet_samples: Union[float, np.ndarray],
+        numba_parallel_threads: int = 1
+) -> Union[float, np.ndarray]:
     """
     Computes the test-statistic of the ttest / bootstrapping using vectorized
     code. Usually noise_samples and planet_samples contain a list of
     multiple samples. For every pair of noise and planet sample this function
-    returns one t-value. In case more than 10e4 test values have to be computed
+    returns one T value. In case more than 10e4 test values have to be computed
     a parallel implementation using numba can be used.
 
     Args:
         planet_samples: The planet sample containing the observation of the
-            planet (Y1) as a float.
+            planet :math:`Y_1,` as a float.
             In case multiple tests are performed the input can also be a
-            list or 1D array ((Y1)1, (Y1)2, ...)
-        noise_samples: List or 1D array of noise observations containing
-            (float) values i.e. (X1, ...., Xn). In case multiple tests are
+            list or 1D array :math:`((Y_1)_1, (Y_1)_2, ...)`
+        noise_samples: The noise observations containing
+            :math:`(X_1, ..., X_n)`. In case multiple tests are
             performed the input can also be a list of lists / 1D arrays or
-            a 2D array. ((X1, ...., Xn)1, (X1, ...., Xn)2, ... )
+            a 2D array:
+            :math:`(X_1, ..., X_n)_1, (X_1, ..., X_n)_2, ...`.
         numba_parallel_threads: The number of parallel threads used by numba.
             In case the function is used with multiprocessing this number
             should always be equal to the default of 1.
 
-    Returns: float (in case of 1D input), list (in case of 2D input) of
-        t-values / SNR
+    Returns:
+        The ttest / bootstrapping test statistic :math:`T_{obs},`. Either a
+        single value or a 1D numpy array.
     """
+
     # make sure noise_samples is np.array
     noise_samples = np.array(noise_samples)
 
     if isinstance(planet_samples, (np.floating, float)):
         # Only a single test
-        m = 1
-        n = noise_samples.shape[0]
+        planet_size_m = 1
+        noise_size_n = noise_samples.shape[0]
         x_bar_noise = np.mean(noise_samples)
         y_bar_planet = planet_samples
-        noise = np.std(noise_samples, ddof=1) * np.sqrt(1 / n + 1 / m)
+        noise = np.std(noise_samples, ddof=1) * \
+            np.sqrt(1 / noise_size_n + 1 / planet_size_m)
 
     else:
         # Multiple tests
@@ -90,14 +100,15 @@ def t_statistic_vectorized(
 
             return results
 
-        m = 1
-        n = noise_samples.shape[1]
+        planet_size_m = 1
+        noise_size_n = noise_samples.shape[1]
         x_bar_noise = np.mean(noise_samples, axis=1)
         y_bar_planet = planet_samples
-        noise = np.std(noise_samples, axis=1, ddof=1) * np.sqrt(1 / n + 1 / m)
+        noise = np.std(noise_samples, axis=1, ddof=1) *\
+            np.sqrt(1 / noise_size_n + 1 / planet_size_m)
 
-    tau = (y_bar_planet - x_bar_noise) / noise
-    return tau
+    statistic_t = (y_bar_planet - x_bar_noise) / noise
+    return statistic_t
 
 ################################################################################
 # ------------------------------ The Test --------------------------------------
@@ -111,89 +122,111 @@ class TTest(TestInterface):
     """
 
     @classmethod
-    def fpf2tau(
+    def fpf_2_t(
             cls,
-            fpf,
-            num_noise_values):
+            fpf: Union[float, np.ndarray],
+            num_noise_values: int
+    ) -> Union[float, np.ndarray]:
         """
-        Computes the required value of tau (the test statistic) to get a
-        confidence level of fpf. Takes into account the effect of the sample
-        size by using the t-distribution.
-        Accepts single value inputs as well as a list of fpf values.
+        Computes the required value of :math:`T_{obs},` (the test statistic) to
+        get a confidence level of fpf. Takes into account the effect of the
+        sample size by using the t-distribution.
+        Accepts a single value as input as well as a list of fpf values.
 
         Args:
-            fpf: Desired confidence level as FPF (float or list)
-            num_noise_values: Number of noise observations. (int)
+            fpf: Desired confidence level(s) as FPF
+            num_noise_values: Number of noise observations. Needed to take the
+                effect of the sample size into account.
 
-        Returns: The needed test statistic tau (float or list of floats)
+        Returns:
+            The required value(s) of :math:`T_{obs},`
         """
-        n = num_noise_values
-        m = 1
+        noise_size_n = num_noise_values
+        planet_size_m = 1
 
-        tau = stats.t.isf(fpf, df=n + m - 2)
-        return tau
+        statistic_t = stats.t.isf(fpf, df=noise_size_n + planet_size_m - 2)
+        return statistic_t
 
-    def tau2fpf(
+    def t_2_fpf(
             self,
-            tau,
-            num_noise_values):
+            statistic_t: Union[float, np.ndarray],
+            num_noise_values: int
+    ) -> Union[float, np.ndarray]:
         """
-        Computed the confidence as fpf given the test statistic tau. Takes into
-        account the effect of the sample size by using the t-distribution.
-        Accepts single value inputs as well as a list of fpf values.
+        Computed the p-value of the ttest given the test statistic
+        :math:`T_{obs},`. Takes into account the effect of the sample size by
+        using the t-distribution.
+        Accepts a single value as input as well as a list of :math:`T_{obs},`
+        values.
 
         Args:
-            tau: The test statistic (float or list)
-            num_noise_values: Number of noise observations. (int)
+            statistic_t: The test statistic value(s) :math:`T_{obs},`
+            num_noise_values: Number of noise observations. Needed to take the
+                effect of the sample size into account.
 
-        Returns: The confidence / p-value / fpf of the test
+        Returns:
+            The uncertainty / p-value / fpf of the test
 
         """
-        n = num_noise_values
-        m = 1
+        noise_size_n = num_noise_values
+        planet_size_m = 1
 
-        if isinstance(tau, (float, np.floating)):
-            fpf = stats.t.sf(tau, df=n + m - 2)
+        if isinstance(statistic_t, (float, np.floating)):
+            fpf = stats.t.sf(statistic_t, df=noise_size_n + planet_size_m - 2)
 
         # check if we can use multiprocessing for speedups
-        elif len(tau) > 10e4:
-            # split the tau values into 100 sub arrays and run them in parallel
-            pool = multiprocessing.Pool(int(self.num_cpus))
-            mp_results = pool.starmap(
-                stats.t.sf,
-                [(sub_array, m + n - 2) for sub_array in
-                    np.array_split(tau, 100)])
+        elif len(statistic_t) > 10e4:
+            # split the t values into 100 sub arrays and run them in parallel
 
-            pool.close()
+            with multiprocessing.Pool(int(self.num_cpus)) as pool:
+                mp_results = pool.starmap(
+                    stats.t.sf,
+                    [(sub_array, planet_size_m + noise_size_n - 2)
+                     for sub_array in
+                     np.array_split(statistic_t, 100)])
 
             fpf = np.concatenate(mp_results).flatten()
         else:
-            fpf = stats.t.sf(tau, df=n + m - 2)
+            fpf = stats.t.sf(statistic_t, df=noise_size_n + planet_size_m - 2)
 
         return fpf
 
     def test_2samp(
             self,
-            planet_samples,
-            noise_samples):
-        """
-        Performs a two sample T-Test. This implementation is similar to the one
-        in scipy but calculates the special case where only one planet sample
-        is given. More information on the function can be found in the
-        TestInterface.
+            planet_samples: Union[float, np.ndarray],
+            noise_samples: Union[List[float], np.ndarray]
+    ) -> Union[Tuple[float, float],
+               Tuple[np.ndarray, np.ndarray]]:
+        r"""
+        Performs one (or multiple) two sample T-Tests given noise observations
+        :math:`(X_1, ..., X_n)` and a planet observation :math:`Y_1,`
+        with null hypothesis:
+
+        :math:`H_0: \mu_X = \mu_Y`
+
+        against the alternative:
+
+        :math:`H_1: \mu_X < \mu_Y`
+
+        This implementation is similar to the one in scipy but calculates the
+        special case where only one value is given in the planet sample.
 
         Args:
             planet_samples: The planet sample containing the observation of the
-                planet (Y1) as a float.
+                planet :math:`Y_1` as a float.
                 In case multiple tests are performed the input can also be a
-                list or 1D array ((Y1)1, (Y1)2, ...)
-            noise_samples: List or 1D array of noise observations containing
-                (float) values i.e. (X1, ...., Xn). In case multiple tests are
+                list or 1D array :math:`((Y_1)_1, (Y_1)_2, ...)`.
+            noise_samples: The noise observations containing
+                :math:`(X_1, ..., X_n)`. In case multiple tests are
                 performed the input can also be a list of lists / 1D arrays or
-                a 2D array. ((X1, ...., Xn)1, (X1, ...., Xn)2, ... )
+                a 2D array:
+                :math:`(X_1, ..., X_n)_1, (X_1, ..., X_n)_2, ...`
 
-        Returns: The p-value (or list of p-values) of the test i.e. the FPF,
-            the test statistic (or list of statistics)
+        Returns:
+            1. The p-value (or a 1d array of p-values) of the test i.e. the FPF.
+
+            2. The test statistic :math:`T_{obs},` (or a 1d array of
+            the statistics).
         """
 
         # run the super method to check if the shapes are correct
@@ -202,49 +235,56 @@ class TTest(TestInterface):
         # make sure noise_samples is np.array
         noise_samples = np.array(noise_samples)
 
-        tau = t_statistic_vectorized(noise_samples,
-                                     planet_samples,
-                                     numba_parallel_threads=self.num_cpus)
+        statistic_t = t_statistic_vectorized(
+            noise_samples,
+            planet_samples,
+            numba_parallel_threads=self.num_cpus)
 
         if isinstance(planet_samples, (np.floating, float)):
             num_noise_values = noise_samples.shape[0]
         else:
             num_noise_values = noise_samples.shape[1]
 
-        p_values = self.tau2fpf(tau, num_noise_values)
+        p_values = self.t_2_fpf(statistic_t, num_noise_values)
 
-        return p_values, tau
+        return p_values, statistic_t
 
     def constrain_planet(
             self,
-            noise_at_planet_pos,
-            noise_samples,
-            desired_confidence_fpf):
+            noise_at_planet_pos: Union[float, List[float], np.ndarray],
+            noise_samples: Union[List[float], np.ndarray],
+            desired_confidence_fpf: float
+    ) -> Union[float, np.ndarray]:
         """
-        The inverse of test_2samp. Given noise observations (X1, ..., Xn-1) and
-        a single noise observation (Xn) this function computes how much flux
-        we have to add to Xn such that a two sample ttest with noise
-        (X1, ..., Xn-1) and planet signal (Y1 = Xn + added_flux) reaches a
-        desired confidence level / p-value of the test. The added_flux is the
-        flux a potential planet needs to add to the residual such that the test
-        counts the observation as a detection. Similar to test_2samp this
-        function also accepts lists as inputs to constrain multiple added_flux
-        values at once.
+        The inverse of test_2samp. Given noise observations
+        :math:`(X_1, ..., X_{n-1})` and a single noise observation
+        :math:`X_n` this function computes how much flux we have to add to
+        :math:`X_n` such that a t-test with noise
+        :math:`(X_1, ..., X_{n-1})` and planet signal
+        :math:`Y_1 = X_n + f` rejects the null hypothesis i.e. reaches
+        the desired confidence level. The added flux :math:`f` is the flux a
+        potential planet needs to have such that we would count is as a
+        detection (assuming we observe it together with the noise at
+        :math:`X_n`). Similar to test_2samp this function also accepts lists as
+        inputs to constrain multiple added_flux values at the same time.
 
         Args:
-            noise_at_planet_pos: The noise observation (Xn) on top of which the
-                planet is added (float). In case multiple values are constrained
-                this can also be a list or 1D array of floats.
+            noise_at_planet_pos: The noise observation :math:`X_n` on top of
+                which the planet is added. In case multiple values are
+                constrained at the same time this can also be a list or 1D
+                array of floats.
             noise_samples: List or 1D array of noise observations containing
-                (float) values i.e. (X1, ...., Xn-1). In case multiple tests are
+                (:math:`(X_1, ..., X_{n-1})`. In case multiple tests are
                 performed the input can also be a list of lists / 1D arrays or
-                a 2D array. ((X1, ...., Xn-1)1, (X1, ...., Xn-1)2, ... )
+                a 2D array:
+                :math:`(X_1, ..., X_{n-1})_1, (X_1, ..., X_{n-1})_2, ...`.
             desired_confidence_fpf: The desired confidence we want to reach as
                 FPF. For example in case of a 5 sigma detection 2.87e-7.
 
-        Returns: The flux we need to add to noise_at_planet_pos to reach the
-            desired_confidence_fpf (float). In case of multiple test the output
-            is a 1D array.
+        Returns:
+            The flux we need to add to noise_at_planet_pos to reach the
+            desired_confidence_fpf :math:`f` for a t-test.
+            In case of multiple test the output is a 1D array.
         """
 
         # run the super method to check if the shapes are correct
@@ -261,24 +301,24 @@ class TTest(TestInterface):
             noise_samples = np.array([noise_samples, ])
 
         all_flux_needed = []
-        for i in range(len(noise_at_planet_pos)):
-            tmp_noise_at_planet_pos = noise_at_planet_pos[i]
+        for i, tmp_noise_at_planet_pos in enumerate(noise_at_planet_pos):
             tmp_noise_samples = noise_samples[i]
 
-            m = 1
-            n = len(tmp_noise_samples)
+            planet_size_m = 1
+            noise_size_n = len(tmp_noise_samples)
 
-            tmp_tau = self.fpf2tau(desired_confidence_fpf, n)
+            tmp_t = self.fpf_2_t(desired_confidence_fpf,
+                                 noise_size_n)
             tmp_sigma = np.std(tmp_noise_samples, ddof=1)
-            tmp_noise = tmp_sigma * np.sqrt(1 / n + 1 / m)
+            tmp_noise = tmp_sigma * np.sqrt(1 / noise_size_n + 1 /
+                                            planet_size_m)
             tmp_x_bar = np.mean(tmp_noise_samples)
 
-            residual_flux_needed = tmp_tau * tmp_noise + tmp_x_bar
+            residual_flux_needed = tmp_t * tmp_noise + tmp_x_bar
             residual_flux_needed -= tmp_noise_at_planet_pos
             all_flux_needed.append(residual_flux_needed)
 
         if len(all_flux_needed) == 1:
             return all_flux_needed[0]
 
-        else:
-            return np.array(all_flux_needed)
+        return np.array(all_flux_needed)

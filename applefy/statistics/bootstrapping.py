@@ -109,10 +109,10 @@ class BootstrapTest(TTest):
         with open(lookup_file) as f:
             json_lookups = json.load(f)
 
-        # convert tau and fpf lists to np.arrays
+        # convert t and fpf lists to np.arrays
         lookups_new = dict()
         for key, values in json_lookups.items():
-            tmp_dict = {"tau": np.array(values["tau"]),
+            tmp_dict = {"t": np.array(values["t"]),
                         "fpf": np.array(values["fpf"])}
             lookups_new[int(key)] = tmp_dict
 
@@ -128,11 +128,11 @@ class BootstrapTest(TTest):
 
         """
 
-        # internally the values of tau and fpf are np.arrays.
+        # internally the values of t and fpf are np.arrays.
         # We have to convert them into lists
         json_lookups = dict()
         for key, values in self.lookup_tables.items():
-            tmp_dict = {"tau": list(values["tau"]),
+            tmp_dict = {"t": list(values["t"]),
                         "fpf": list(values["fpf"])}
             json_lookups[key] = tmp_dict
 
@@ -149,7 +149,7 @@ class BootstrapTest(TTest):
             approximation_interval=
             np.linspace(-7, 7, 10000)):
         """
-        Calculates the distribution of the test statistic tau under H0 for a
+        Calculates the distribution of the test statistic t under H0 for a
         sample size of m=1 (one planet) and n=num_noise_values by using
         bootstrapping. Allows the use of multiprocessing and management of the
         memory size. The result is approximated and a lookup table is stored.
@@ -165,7 +165,7 @@ class BootstrapTest(TTest):
                 which the results are approximated and stored in the internal
                 lookup table.
 
-        Returns: A 1D array containing all B tau-values generated during
+        Returns: A 1D array containing all B t-values generated during
             bootstrapping
 
         """
@@ -195,19 +195,19 @@ class BootstrapTest(TTest):
         else:
             tau_results.sort()
 
-        # The distribution of tau under H0 is directly given by the tau_results
+        # The distribution of t under H0 is directly given by the tau_results
         # we have computed. However, these values take a lot of memory. Thus,
-        # we approximate the distribution of tau by evaluating paris of tau and
+        # we approximate the distribution of t by evaluating paris of t and
         # fpf for different fpf
         fpf_approx = gaussian_sigma_2_fpf(approximation_interval)
 
-        # Approximate tau by lookup in the tau_results
+        # Approximate t by lookup in the tau_results
 
         # Slow version on non-sorted self.t_results
         # needed_planet_flux = np.quantile(self.t_results, 1 - fpf)
         # Note: We use liner interpolation to approximate the quantiles
 
-        # compute the idx where to look up the tau values
+        # compute the idx where to look up the t values
         k = (len(tau_results) - 1) * (1 - fpf_approx)
         f = np.floor(k)
         c = np.ceil(k)
@@ -218,7 +218,7 @@ class BootstrapTest(TTest):
         tau_approx = d1 + d0
 
         self.lookup_tables[num_noise_values] = dict()
-        self.lookup_tables[num_noise_values]["tau"] = tau_approx
+        self.lookup_tables[num_noise_values]["t"] = tau_approx
         self.lookup_tables[num_noise_values]["fpf"] = fpf_approx
         return tau_results
 
@@ -227,14 +227,14 @@ class BootstrapTest(TTest):
             num_draws,
             num_noise_values):
         """
-        Internal function used to resample and calculate the test statistic tau.
+        Internal function used to resample and calculate the test statistic t.
         This function is executed in parallel in run_bootstrap_experiment.
 
         Args:
-            num_draws: Number of tau values to be calculated.
+            num_draws: Number of t values to be calculated.
             num_noise_values: Number of noise observations i.e. sample size.
 
-        Returns: 1D array of tau values.
+        Returns: 1D array of t values.
 
         """
         np.random.seed()
@@ -246,7 +246,7 @@ class BootstrapTest(TTest):
         # with replacement from the observations ...)
 
         # We draw num_draws indices to select which lists of observations we use
-        # for each computation of tau.
+        # for each computation of t.
         idx_list = np.random.randint(0,
                                      len(self.noise_observations),
                                      num_draws)
@@ -286,27 +286,27 @@ class BootstrapTest(TTest):
                 observations is used to resample. This is only used if a list
                 of (list, 1D array) if was passed as noise observations during
                 initialization of the test.
-            num_draws: Number of tau values to be calculated.
+            num_draws: Number of t values to be calculated.
             num_noise_values: Number of noise observations i.e. sample size.
 
-        Returns: resampled and evaluated values of tau
+        Returns: resampled and evaluated values of t
 
         """
         return 0
 
     # functions to compute the tests
-    def tau2fpf(
+    def t_2_fpf(
             self,
-            tau,
+            t,
             num_noise_values):
         """
-        Computed the confidence as fpf given the test statistic tau. Takes into
+        Computed the confidence as fpf given the test statistic t. Takes into
         account the effect of the sample size and type of the noise by using
         the previously computed lookup tables.
         Accepts single value inputs as well as a list of fpf values.
 
         Args:
-            tau: The test statistic (float or list)
+            t: The test statistic (float or list)
             num_noise_values: Number of noise observations. (int)
 
         Returns: The confidence / p-value / fpf of the test
@@ -314,12 +314,12 @@ class BootstrapTest(TTest):
         """
 
         if num_noise_values not in self.lookup_tables.keys():
-            raise ValueError("No bootstrapping distribution of tau available "
+            raise ValueError("No bootstrapping distribution of t available "
                              "for " + str(num_noise_values) + " noise values."
                              " Please run a new bootstrap experiment or restore"
                              " results from CSV files.")
 
-        tau_lookup = self.lookup_tables[num_noise_values]["tau"]
+        tau_lookup = self.lookup_tables[num_noise_values]["t"]
         fpf_lookup = self.lookup_tables[num_noise_values]["fpf"]
 
         # interpolate the results from the lookup table
@@ -328,32 +328,32 @@ class BootstrapTest(TTest):
                                        kind="cubic",
                                        fill_value="extrapolate")
 
-        if isinstance(tau, (float, np.floating)):
-            fpf = tau2fpf(tau)
+        if isinstance(t, (float, np.floating)):
+            fpf = tau2fpf(t)
 
         # check if we can use multiprocessing for speedups
-        elif len(tau) > 10e4:
-            # split the tau values into 100 sub arrays and run them in parallel
+        elif len(t) > 10e4:
+            # split the t values into 100 sub arrays and run them in parallel
             pool = multiprocessing.Pool(int(self.num_cpus))
             mp_results = pool.starmap(
                 tau2fpf,
                 [(sub_array, ) for sub_array in
-                    np.array_split(tau, 100)])
+                 np.array_split(t, 100)])
 
             pool.close()
 
             fpf = np.concatenate(mp_results).flatten()
         else:
-            fpf = tau2fpf(tau)
+            fpf = tau2fpf(t)
 
         return fpf
 
-    def fpf2tau(
+    def fpf_2_t(
             self,
             fpf,
             num_noise_values):
         """
-        Computes the required value of tau (the test statistic) to get a
+        Computes the required value of t (the test statistic) to get a
         confidence level of fpf. Takes into account the effect of the sample
         size and type of the noise by using the previously computed lookup
         tables.
@@ -363,16 +363,16 @@ class BootstrapTest(TTest):
             fpf: Desired confidence level as FPF (float or list)
             num_noise_values: Number of noise observations. (int)
 
-        Returns: The needed test statistic tau (float or list of floats)
+        Returns: The needed test statistic t (float or list of floats)
         """
 
         if num_noise_values not in self.lookup_tables.keys():
-            raise ValueError("No bootstrapping distribution of tau available "
+            raise ValueError("No bootstrapping distribution of t available "
                              "for " + str(num_noise_values) + " noise values."
                              " Please run a new bootstrap experiment or restore"
                              " results from CSV files.")
 
-        tau_lookup = self.lookup_tables[num_noise_values]["tau"]
+        tau_lookup = self.lookup_tables[num_noise_values]["t"]
         fpf_lookup = self.lookup_tables[num_noise_values]["fpf"]
 
         # interpolate the results from the lookup table
@@ -409,17 +409,17 @@ class GaussianBootstrapTest(BootstrapTest):
                 observations is used to resample. This is only used if a list
                 of (list, 1D array) if was passed as noise observations during
                 initialization of the test.
-            num_draws: Number of tau values to be calculated.
+            num_draws: Number of t values to be calculated.
             num_noise_values: Number of noise observations i.e. sample size.
 
-        Returns: resampled and evaluated values of tau
+        Returns: resampled and evaluated values of t
 
         """
 
         noise_values = self.noise_observations[observation_list_idx]
 
         # Step 1: Compute the MLE parameters of the noise distribution under H0
-        # Note: As shown in the paper the test statistic tau under H0 is
+        # Note: As shown in the paper the test statistic t under H0 is
         # independent of the location and scale of the noise distribution.
         # We only calculate it here for illustration purposes as the property
         # does not hold for non-scale shift family distributions.
@@ -462,17 +462,17 @@ class LaplaceBootstrapTest(BootstrapTest):
                 observations is used to resample. This is only used if a list
                 of (list, 1D array) if was passed as noise observations during
                 initialization of the test.
-            num_draws: Number of tau values to be calculated.
+            num_draws: Number of t values to be calculated.
             num_noise_values: Number of noise observations i.e. sample size.
 
-        Returns: resampled and evaluated values of tau
+        Returns: resampled and evaluated values of t
 
         """
 
         noise_values = self.noise_observations[observation_list_idx]
 
         # Step 1: Compute the MLE parameters of the noise distribution under H0
-        # Note: As shown in the paper the test statistic tau under H0 is
+        # Note: As shown in the paper the test statistic t under H0 is
         # independent of the location and scale of the noise distribution.
         # We only calculate it here for illustration purposes as the property
         # does not hold for non-scale shift family distributions.

@@ -49,10 +49,9 @@ class TestInterface(ABC):
 
         Args:
             planet_samples: The planet sample containing the observation of the
-                planet :math:`Y_1,` as a float.
-
+                planet :math:`Y_1` as a float.
                 In case multiple tests are performed the input can also be a
-                list or 1D array :math:`((Y_1)_1, (Y_1)_2, ...)`
+                list or 1D array :math:`((Y_1)_1, (Y_1)_2, ...)`.
             noise_samples: The noise observations containing
                 :math:`(X_1, ..., X_n)`. In case multiple tests are
                 performed the input can also be a list of lists / 1D arrays or
