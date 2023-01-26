@@ -133,7 +133,7 @@ class TestInterface(ABC):
 
 
 def fpf_2_gaussian_sigma(
-        confidence_fpf: float
+        confidence_fpf: Union[float, np.ndarray]
 ) -> float:
     r"""
     Transforms a confidence level given as false-positive-fraction / p-value
@@ -151,7 +151,7 @@ def fpf_2_gaussian_sigma(
 
 
 def gaussian_sigma_2_fpf(
-        confidence_sigma: float
+        confidence_sigma: Union[float, np.ndarray]
 ) -> float:
     r"""
     Transforms a confidence level given as :math:`\sigma_\mathcal{N}` into a

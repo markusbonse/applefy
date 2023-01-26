@@ -153,7 +153,7 @@ class TTest(TestInterface):
             num_noise_values: int
     ) -> Union[float, np.ndarray]:
         """
-        Computed the p-value of the ttest given the test statistic
+        Computes the p-value of the ttest given the test statistic
         :math:`T_{obs},`. Takes into account the effect of the sample size by
         using the t-distribution.
         Accepts a single value as input as well as a list of :math:`T_{obs},`

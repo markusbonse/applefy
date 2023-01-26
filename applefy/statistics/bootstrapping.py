@@ -1,19 +1,23 @@
 """
-Parametric and non-parametric bootstrapping tests.
+This module contains implementations of parametric bootstrapping tests which can
+be used for to calculate contrast curves and contrast grids.
 """
 
+from typing import Union, List, Optional
+
 import json
-import numpy as np
-from scipy import interpolate
 import multiprocessing
 from abc import abstractmethod
 
+import numpy as np
+from scipy import interpolate
+
 try:
     from parallel_sort import parallel_sort_inplace as sort_fast
-    found_fast_sort = True
+    FOUND_FAST_SORT = True
 except ImportError:
     sort_fast = np.sort
-    found_fast_sort = False
+    FOUND_FAST_SORT = False
 
 from applefy.statistics.general import gaussian_sigma_2_fpf
 from applefy.statistics.parametric import TTest, t_statistic_vectorized
@@ -27,29 +31,34 @@ class BootstrapTest(TTest):
     """
     This is a general interface for all bootstrap tests. It implements all
     functionality needed to save and load bootstrap results as json files and
-    run a new bootstrapping experiment. It extends the classical TTest class
-    as both use the same test statistic. They only differ in the mapping from
-    fpf to statistic and vice versa.
+    to run a new bootstrap experiment. It extends the classical
+    :meth:`~applefy.statistics.parametric.TTest` as both use the same test
+    statistic :math:`T_{obs}`. But for a given value of :math:`T_{obs}` the
+    bootstrap tests will give a different p-value / fpf.
     """
 
     def __init__(
             self,
-            noise_observations,
-            num_cpus=1):
+            noise_observations: Union[List[float], np.ndarray, None],
+            num_cpus: int = 1):
         """
         Constructor of a BootstrapTest.
 
         Args:
             noise_observations: Noise observations which are used to run the
                 bootstrap experiments. This can either be a single sample of
-                noise observations or a list of samples. (list, 1D array) or
-                list of (list, 1D array). Can also be set to None. This prevents
-                to run new bootstrap experiments. Only makes sense if previously
-                evaluated statistics are restored from json files.
-            num_cpus: The number of CPU core that will be used during all
-                experiments.
-
+                noise observations :math:`(X_1, ..., X_n)` or a numpy array
+                of several samples
+                :math:`(X_1, ..., X_n)_1, (X_1, ..., X_n)_2, ...`.
+                It can also be set to None. If set to None
+                :meth:`~run_bootstrap_experiment` can not be used which is why
+                this option should only be used to restore a previously run
+                bootstrap experiment from a .json file
+                (see :meth:`~restore_lookups`).
+            num_cpus: The number of CPU cores that will be used in all tests
+                (e.g. to run the bootstrapping).
         """
+
         super().__init__(num_cpus)
 
         if not isinstance(noise_observations, (list, np.ndarray)):
@@ -75,16 +84,22 @@ class BootstrapTest(TTest):
                 self.noise_observations = [np.array(noise_observations), ]
 
     @classmethod
-    def construct_from_json_file(cls, lookup_file):
+    def construct_from_json_file(
+            cls,
+            lookup_file: str
+    ) -> "BootstrapTest":
         """
-        An alternative constructor to create a BootstrapTest based on previously
-        calculated bootstrap results given as a .json file.
+        An alternative constructor to create a BootstrapTest from a previously
+        calculated bootstrap experiment given as a .json file. The function
+        will restore the lookup table which maps :math:`T_{obs}` to the p-values
+        and vice versa.
 
         Args:
             lookup_file: A path to a .json file containing the statistics to be
                 restored (lookup tables).
 
-        Returns: Instance of BootstrapTest
+        Returns:
+            Instance of the BootstrapTest with restored lookup table.
 
         """
 
@@ -93,21 +108,24 @@ class BootstrapTest(TTest):
         return bootstrap_test
 
     # functions for loading and saving lookup tables
-    def restore_lookups(self, lookup_file):
+    def restore_lookups(
+            self,
+            lookup_file: str
+    ) -> None:
         """
-        Restores previous bootstrap results / lookup tables from a .json file.
-        The set of already available lookup tables is updated. Duplicated are
-        overwritten.
+        Restores previously computed bootstrap results / lookup tables from a
+        .json file. The lookup table maps :math:`T_{obs}` to the p-values and
+        vice versa.
+        If lookups already exist they are updated. Duplicates are overwritten.
 
         Args:
-            lookup_file: A path to a .json file containing the statistics to be
-                restored (lookup tables).
+            lookup_file: A path to a .json file containing the lookup tables.
 
         """
 
         # load the file
-        with open(lookup_file) as f:
-            json_lookups = json.load(f)
+        with open(lookup_file) as file:
+            json_lookups = json.load(file)
 
         # convert t and fpf lists to np.arrays
         lookups_new = dict()
@@ -118,14 +136,17 @@ class BootstrapTest(TTest):
 
         self.lookup_tables.update(lookups_new)
 
-    def save_lookups(self, lookup_file):
+    def save_lookups(
+            self,
+            lookup_file: str
+    ) -> None:
         """
-        Saves the internal lookup tables into a .json file. This way they can be
-        restored using restore_lookups on a later stage.
+        Saves the internal lookup tables into a .json file.
+        The lookup tables map :math:`T_{obs}` to the p-values and vice versa.
+        The saved tables can be restored with :meth:`~restore_lookups`.
 
         Args:
-            lookup_file: The path / filename where to store the lookup tables.
-
+            lookup_file: The path with filename where lookup tables are saved.
         """
 
         # internally the values of t and fpf are np.arrays.
@@ -137,40 +158,47 @@ class BootstrapTest(TTest):
             json_lookups[key] = tmp_dict
 
         # Save the results
-        with open(lookup_file, 'w') as f:
-            json.dump(json_lookups, f)
+        with open(lookup_file, 'w') as file:
+            json.dump(json_lookups, file)
 
     # functions to run bootstrapping
     def run_bootstrap_experiment(
             self,
-            memory_size,
-            num_noise_values,
-            num_draws=10e8,
-            approximation_interval=
-            np.linspace(-7, 7, 10000)):
-        """
-        Calculates the distribution of the test statistic t under H0 for a
-        sample size of m=1 (one planet) and n=num_noise_values by using
-        bootstrapping. Allows the use of multiprocessing and management of the
-        memory size. The result is approximated and a lookup table is stored.
+            memory_size: int,
+            num_noise_values: int,
+            num_draws: int = 10e8,
+            approximation_interval: Optional[np.ndarray] = None
+    ) -> np.ndarray:
+        r"""
+        Runs a bootstrapping experiment (resampling) in order to calculate
+        the distribution of the test statistic :math:`T` under
+        :math:`H_0` given a sample size of m=1 (one planet observation) and
+        n=num_noise_values. Allows the use of multiprocessing and management of
+        memory size. The result is stored as a lookup table using the
+        approximation_interval.
         The strategy used to resample during the bootstrapping is implemented
         by the classes inheriting from this class.
 
         Args:
             memory_size: Maximum number of float values stored per process.
                 A loop is used in case the number is small.
-            num_noise_values: The sample size of the noise.
-            num_draws: Number of bootstrap experiments B
-            approximation_interval: The values in terms of gaussian sigma at
-                which the results are approximated and stored in the internal
-                lookup table.
+            num_noise_values: The sample size of the noise observations. This
+                depends on the separation from the star.
+            num_draws: Number of bootstrap experiments (resamples) :math:`B`.
+            approximation_interval: The values in terms of
+                :math:`\sigma_{\mathcal{N}}` at which the distribution of
+                :math:`T_{obs}` is evaluated and stored as a lookup table. If
+                None a np.linspace(-7, 7, 10000) will be used.
 
-        Returns: A 1D array containing all B t-values generated during
-            bootstrapping
+        Returns:
+            A 1D array with :math:`B` bootstrap values :math:`T^*`.
 
         """
+        # set the approximation_interval if it is None
+        if approximation_interval is None:
+            approximation_interval = np.linspace(-7, 7, 10000)
 
-        # make sure num_noise_values is an int. Otherwise saving as json might
+        # make sure num_noise_values is an int. Otherwise, saving as json might
         # fail later
         num_noise_values = int(num_noise_values)
 
@@ -180,61 +208,64 @@ class BootstrapTest(TTest):
 
         num_experiments = int(num_draws / memory_size)
 
-        pool = multiprocessing.Pool(int(self.num_cpus))
-        mp_results = pool.starmap(
-            self._run_boostrap_mp,
-            [(int(memory_size), int(num_noise_values)), ] * num_experiments)
+        with multiprocessing.Pool(int(self.num_cpus)) as pool:
+            mp_results = pool.starmap(
+                self._run_boostrap_mp,
+                [(int(memory_size), int(num_noise_values)), ] * num_experiments)
 
-        pool.close()
-        tau_results = np.concatenate(mp_results)
+        t_results = np.concatenate(mp_results)
 
         # We have to sort the t values in order to allow for fast computation
         # of fpf and confidence levels later
-        if found_fast_sort:
-            sort_fast(tau_results)
+        if FOUND_FAST_SORT:
+            sort_fast(t_results)
         else:
-            tau_results.sort()
+            t_results.sort()
 
-        # The distribution of t under H0 is directly given by the tau_results
+        # The distribution of t under H0 is directly given by the t_results
         # we have computed. However, these values take a lot of memory. Thus,
         # we approximate the distribution of t by evaluating paris of t and
         # fpf for different fpf
         fpf_approx = gaussian_sigma_2_fpf(approximation_interval)
 
-        # Approximate t by lookup in the tau_results
+        # Approximate t by lookup in the t_results
 
         # Slow version on non-sorted self.t_results
         # needed_planet_flux = np.quantile(self.t_results, 1 - fpf)
         # Note: We use liner interpolation to approximate the quantiles
 
         # compute the idx where to look up the t values
-        k = (len(tau_results) - 1) * (1 - fpf_approx)
-        f = np.floor(k)
-        c = np.ceil(k)
+        tmp_idx = (len(t_results) - 1) * (1 - fpf_approx)
+        floor_value = np.floor(tmp_idx)
+        ceil_value = np.ceil(tmp_idx)
 
-        d0 = tau_results[f.astype(np.int64)] * (c - k)
-        d1 = tau_results[c.astype(np.int64)] * (k - f)
-
-        tau_approx = d1 + d0
+        t_floor = t_results[floor_value.astype(np.int64)] * \
+            (ceil_value - tmp_idx)
+        t_ceil = t_results[ceil_value.astype(np.int64)] * \
+            (tmp_idx - floor_value)
 
         self.lookup_tables[num_noise_values] = dict()
-        self.lookup_tables[num_noise_values]["t"] = tau_approx
+        self.lookup_tables[num_noise_values]["t"] = t_floor + t_ceil
         self.lookup_tables[num_noise_values]["fpf"] = fpf_approx
-        return tau_results
+        return t_results
 
     def _run_boostrap_mp(
             self,
-            num_draws,
-            num_noise_values):
+            num_draws: int,
+            num_noise_values: int
+    ) -> np.ndarray:
         """
-        Internal function used to resample and calculate the test statistic t.
-        This function is executed in parallel in run_bootstrap_experiment.
+        Internal function used to resample and calculate the test statistic
+        :math:`T` with multiprocessing. This function is executed in
+        parallel in :meth:`~run_bootstrap_experiment`.
 
         Args:
-            num_draws: Number of t values to be calculated.
-            num_noise_values: Number of noise observations i.e. sample size.
+            num_draws: Number of resamples :math:`B`.
+            num_noise_values: The sample size of the noise observations. This
+                depends on the separation from the star.
 
-        Returns: 1D array of t values.
+        Returns:
+            1D array with :math:`B` values of  :math:`T^*`.
 
         """
         np.random.seed()
@@ -255,61 +286,66 @@ class BootstrapTest(TTest):
         # local_observation_list
         sub_idx, sub_num_draws = np.unique(idx_list, return_counts=True)
 
-        tau_values = []
+        t_values = []
 
-        for i in range(len(sub_idx)):
-            tmp_observation_list_idx = sub_idx[i]
+        for i, tmp_observation_list_idx in enumerate(sub_idx):
             tmp_num_draws = sub_num_draws[i]
 
-            tmp_tau = self._sample_tau(tmp_observation_list_idx,
-                                       tmp_num_draws,
-                                       num_noise_values)
+            tmp_t = self._sample_t(tmp_observation_list_idx,
+                                   tmp_num_draws,
+                                   num_noise_values)
 
-            tau_values.append(tmp_tau)
+            t_values.append(tmp_t)
 
-        return np.concatenate(tau_values).flatten()
+        return np.concatenate(t_values).flatten()
 
     @abstractmethod
-    def _sample_tau(
+    def _sample_t(
             self,
-            observation_list_idx,
-            num_draws,
-            num_noise_values):
+            observation_list_idx: int,
+            num_draws: int,
+            num_noise_values: int
+    ) -> np.ndarray:
         """
         Abstract interface which is implemented by the inheriting classes. This
-        function contains how we resample during the bootstrapping and is
-        different for parametric, semi-parametric and non-parametric
-        bootstrapping.
+        function contains how we resample during bootstrapping and is
+        different depending on the type of noise we assume.
 
         Args:
             observation_list_idx: Index of which of the available input noise
                 observations is used to resample. This is only used if a list
-                of (list, 1D array) if was passed as noise observations during
+                of (list, 1D array) was passed as noise observations during
                 initialization of the test.
-            num_draws: Number of t values to be calculated.
-            num_noise_values: Number of noise observations i.e. sample size.
+            num_draws: Number of resamples :math:`B`.
+            num_noise_values: The sample size of the noise observations. This
+                depends on the separation from the star.
 
-        Returns: resampled and evaluated values of t
+        Returns:
+            1D array with :math:`B` values of  :math:`T^*`.
 
         """
-        return 0
+        return np.array([0,])
 
     # functions to compute the tests
     def t_2_fpf(
             self,
-            t,
-            num_noise_values):
+            statistic_t: Union[float, np.ndarray],
+            num_noise_values: int
+    ) -> Union[float, np.ndarray]:
         """
-        Computed the confidence as fpf given the test statistic t. Takes into
-        account the effect of the sample size and type of the noise by using
-        the previously computed lookup tables.
-        Accepts single value inputs as well as a list of fpf values.
+        Computes the p-value of the ttest given the test statistic
+        :math:`T_{obs},`. Takes into account the effect of the sample size and
+        type of the noise (using previously computed lookup tables).
+        Accepts a single value as input as well as a list of :math:`T_{obs},`
+        values.
 
         Args:
-            t: The test statistic (float or list)
-            num_noise_values: Number of noise observations. (int)
+            statistic_t: The test statistic value(s) :math:`T_{obs},`
+            num_noise_values: Number of noise observations. Needed to take the
+                effect of the sample size into account.
 
-        Returns: The confidence / p-value / fpf of the test
+        Returns:
+            The uncertainty / p-value / fpf of the test
 
         """
 
@@ -319,51 +355,53 @@ class BootstrapTest(TTest):
                              " Please run a new bootstrap experiment or restore"
                              " results from CSV files.")
 
-        tau_lookup = self.lookup_tables[num_noise_values]["t"]
+        t_lookup = self.lookup_tables[num_noise_values]["t"]
         fpf_lookup = self.lookup_tables[num_noise_values]["fpf"]
 
         # interpolate the results from the lookup table
-        tau2fpf = interpolate.interp1d(tau_lookup,
+        t2fpf = interpolate.interp1d(t_lookup,
                                        fpf_lookup,
                                        kind="cubic",
                                        fill_value="extrapolate")
 
-        if isinstance(t, (float, np.floating)):
-            fpf = tau2fpf(t)
+        if isinstance(statistic_t, (float, np.floating)):
+            fpf = t2fpf(statistic_t)
 
         # check if we can use multiprocessing for speedups
-        elif len(t) > 10e4:
+        elif len(statistic_t) > 10e4:
             # split the t values into 100 sub arrays and run them in parallel
-            pool = multiprocessing.Pool(int(self.num_cpus))
-            mp_results = pool.starmap(
-                tau2fpf,
-                [(sub_array, ) for sub_array in
-                 np.array_split(t, 100)])
 
-            pool.close()
+            with multiprocessing.Pool(int(self.num_cpus)) as pool:
+                mp_results = pool.starmap(
+                    t2fpf,
+                    [(sub_array, ) for sub_array in
+                     np.array_split(statistic_t, 100)])
 
             fpf = np.concatenate(mp_results).flatten()
         else:
-            fpf = tau2fpf(t)
+            fpf = t2fpf(statistic_t)
 
         return fpf
 
     def fpf_2_t(
             self,
-            fpf,
-            num_noise_values):
+            fpf: Union[float, np.ndarray],
+            num_noise_values: int
+    ) -> Union[float, np.ndarray]:
         """
-        Computes the required value of t (the test statistic) to get a
-        confidence level of fpf. Takes into account the effect of the sample
-        size and type of the noise by using the previously computed lookup
-        tables.
-        Accepts single value inputs as well as a list of fpf values.
+        Computes the required value of :math:`T_{obs},` (the test statistic) to
+        get a confidence level of fpf.
+        Takes into account the effect of the sample size and
+        type of the noise (using previously computed lookup tables).
+        Accepts a single value as input as well as a list of fpf values.
 
         Args:
-            fpf: Desired confidence level as FPF (float or list)
-            num_noise_values: Number of noise observations. (int)
+            fpf: Desired confidence level(s) as FPF
+            num_noise_values: Number of noise observations. Needed to take the
+                effect of the sample size into account.
 
-        Returns: The needed test statistic t (float or list of floats)
+        Returns:
+            The required value(s) of :math:`T_{obs},`
         """
 
         if num_noise_values not in self.lookup_tables.keys():
@@ -372,16 +410,17 @@ class BootstrapTest(TTest):
                              " Please run a new bootstrap experiment or restore"
                              " results from CSV files.")
 
-        tau_lookup = self.lookup_tables[num_noise_values]["t"]
+        t_lookup = self.lookup_tables[num_noise_values]["t"]
         fpf_lookup = self.lookup_tables[num_noise_values]["fpf"]
 
         # interpolate the results from the lookup table
-        fpf2tau = interpolate.interp1d(fpf_lookup,
-                                       tau_lookup,
-                                       kind="cubic",
-                                       fill_value="extrapolate")
+        fpf2t = interpolate.interp1d(
+            fpf_lookup,
+            t_lookup,
+            kind="cubic",
+            fill_value="extrapolate")
 
-        return fpf2tau(fpf)
+        return fpf2t(fpf)
 
 ################################################################################
 # -----------------Parametric Bootstrap Test -----------------------------------
@@ -391,28 +430,31 @@ class BootstrapTest(TTest):
 class GaussianBootstrapTest(BootstrapTest):
     """
     The GaussianBootstrapTest is a parametric hypothesis test which assumes that
-    the distribution of the noise is Gaussian. This test is approximately
-    equivalent to the ttest. This implementation is only for illustration
-    purposes and should not be used in practice.
+    the noise is Gaussian. This test is approximately equivalent to the ttest.
+    This implementation is only for illustration purposes and should not be
+    used in practice.
     """
 
-    def _sample_tau(
+    def _sample_t(
             self,
-            observation_list_idx,
-            num_draws,
-            num_noise_values):
+            observation_list_idx: int,
+            num_draws: int,
+            num_noise_values: int
+    ) -> np.ndarray:
         """
         Uses Parametric bootstrapping to resample from a Gaussian distribution.
 
         Args:
             observation_list_idx: Index of which of the available input noise
                 observations is used to resample. This is only used if a list
-                of (list, 1D array) if was passed as noise observations during
+                of (list, 1D array) was passed as noise observations during
                 initialization of the test.
-            num_draws: Number of t values to be calculated.
-            num_noise_values: Number of noise observations i.e. sample size.
+            num_draws: Number of resamples :math:`B`.
+            num_noise_values: The sample size of the noise observations. This
+                depends on the separation from the star.
 
-        Returns: resampled and evaluated values of t
+        Returns:
+            1D array with :math:`B` values of  :math:`T^*`.
 
         """
 
@@ -446,26 +488,31 @@ class LaplaceBootstrapTest(BootstrapTest):
     The LaplaceBootstrapTest is a parametric hypothesis test which assumes that
     the distribution of the noise is Laplace. The test accounts for the higher
     occurrence rate of bright noise values as well as for the small sample size
-    at close separations to the star.
+    at close separations to the star. Applefy comes with previously computed
+    lookup tables (See [ref]).
     """
+    # TODO add link to lookup tables
 
-    def _sample_tau(
+    def _sample_t(
             self,
             observation_list_idx,
             num_draws,
             num_noise_values):
         """
-        Uses Parametric bootstrapping to resample from a Laplacian distribution.
+        Uses Parametric bootstrapping to resample from a Laplacian distribution
+        and calculate the values of :math:`T^*`.
 
         Args:
             observation_list_idx: Index of which of the available input noise
                 observations is used to resample. This is only used if a list
-                of (list, 1D array) if was passed as noise observations during
+                of (list, 1D array) was passed as noise observations during
                 initialization of the test.
-            num_draws: Number of t values to be calculated.
-            num_noise_values: Number of noise observations i.e. sample size.
+            num_draws: Number of resamples :math:`B`.
+            num_noise_values: The sample size of the noise observations. This
+                depends on the separation from the star.
 
-        Returns: resampled and evaluated values of t
+        Returns:
+            1D array with :math:`B` values of  :math:`T^*`.
 
         """
 
