@@ -1,3 +1,7 @@
+"""
+Functions needed to insert and manage the positions of fake planets. These utils
+are needed to calculate a contrast grid das well as contrast curves.
+"""
 
 from typing import List, Optional, Dict, Tuple, Any
 
@@ -360,7 +364,7 @@ def merge_fake_planet_residuals(
                                  for _, x in planet_dict.items()])
 
     all_residuals_sorted = []
-    for separation, row in idx_table.iterrows():
+    for _, row in idx_table.iterrows():
         tmp_row_residuals = []
         for tmp_idx in row:
             tmp_row_residuals.append(residuals_paired[tmp_idx - 1])
