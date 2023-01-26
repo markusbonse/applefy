@@ -1,3 +1,6 @@
+
+from typing import List, Optional, Dict, Tuple, Any
+
 import numpy as np
 import pandas as pd
 from scipy.ndimage import shift
@@ -6,28 +9,31 @@ from applefy.utils.positions import estimate_aperture_positions, center_subpixel
 
 
 def calculate_fake_planet_positions(
-        test_img,
-        psf_fwhm_radius,
-        num_planets=6,
-        separations=None):
+        test_img: np.ndarray,
+        psf_fwhm_radius: float,
+        num_planets: int = 6,
+        separations: Optional[np.ndarray] = None
+) -> Dict[int, List[Tuple[int, int, float, float]]]:
     """
-    Function which estimates the positions for fake planets to be inserted to
-    calculate contrast maps.
+    Function which estimates the positions for fake planets to be inserted
+    during the computation of a contrast grid.
 
     Args:
-        test_img: A 2D test image [np.array]
-        psf_fwhm_radius: The radius of the PSF-FWHM [pixel].
-        num_planets: The number of planets to be inserted (int). Has to be
-            between 1 (minimum) and 6 (maximum). More planets provide more
-            accuracy of the results.
+        test_img: A 2D test image needed to estimate the size and center of the
+            raw data.
+        psf_fwhm_radius: The FWHM (radius) of the stellar PSF. It is needed to
+            determine the spacing such that noise values are approximately
+            independent.
+        num_planets: The number of planets to be inserted. Has to be
+            between 1 (minimum) and 6 (maximum). More planets result in more
+            accurate results but also longer computation time.
         separations: Separations at which fake planets are inserted [pixel].
-            By default, (If set to None) separations are selected in steps of
-            1 lambda/D for the center to the edge of the test image:
-                np.arange(0, center[0], aperture_radius * 2)[1:]
+            By default, (If set to None) separations are selected in steps
+            of 1 FWHM form the central star to the edge of the image.
 
     Returns:
-        planet_positions - dict which maps all separations (pixel) to a list of
-            planet positions given as (x_pos, y_pos, separation, angle)
+        A dict which maps all separations (pixel) to a list of planet positions
+        given as (x_pos, y_pos, separation, angle)
 
     """
 
@@ -62,23 +68,25 @@ def calculate_fake_planet_positions(
 
 
 def generate_fake_planet_experiments(
-        flux_ratios: list,
-        planet_positions: dict):
+        flux_ratios: List[float],
+        planet_positions:  Dict[int, List[Tuple[int, int, float, float]]]
+) -> Dict[str, dict]:
     """
-        Function which creates config files for the contrast map. Each file
-        corresponds to one experiment / data reduction. The experiment with idx
-        0000 is the experiment with no fake planets.
+    Function which creates config files for the contrast grid. Each file
+    corresponds to one experiment / data reduction. The experiment with idx
+    0000 is the experiment with no fake planets.
 
     Args:
         flux_ratios:  A list of the planet-to-star flux_ratios used for the
             fake planets. If you want to calculate a simple contrast curve the
             list should contain a single value smaller than the expected
-             detection limit. For the computation of a contrast grid several
-             flux_ratios are needed.
-        planet_positions: planet positions given by
-            calculate_planet_apertures
+            detection limit. For the computation of a contrast grid several
+            flux_ratios are needed.
+        planet_positions: The planet positions as given by
+            :meth:`~calculate_fake_planet_positions`
 
-    Returns: list of config files as dicts
+    Returns:
+        List of config files as dicts.
 
     """
 
@@ -123,39 +131,49 @@ def generate_fake_planet_experiments(
     return all_config_files
 
 
-def sort_fake_planet_results(results):
-    # TODO change documentation
+def sort_fake_planet_results(
+        results: List[Tuple[Dict[str, Any], np.ndarray]]
+) -> Tuple[np.ndarray,
+           Dict[int,
+                List[Tuple[np.ndarray,
+                           List[float]]]],
+           pd.DataFrame]:
     """
-    Function needed to read in the residuals and extract the meta-information
-    from the .json config files.
+    Function needed to sort tuples of residuals with associated config files.
 
     Args:
-        results: List which contains the path to the residuals and corresponding
-        config files. List items have to be structured like:
-            (path to config file, path to the residual)
+        results: List which contains tuples of config files (as dict) and
+            the corresponding residuals.
 
-    Returns: A tuple containing elements (fp_residual, planet_dict, idx_table):
-        - fp_residual: A 2D numpy array of the residual without any fake planets
-        - planet_dict: A dictionary with keys = Experiment ID. For every ID a
-            list is given which contains tuples of the residual and the position
-            of the corresponding fake planet. E.g.:
+                (config file, residual)
 
-            planet_dict[1] = [(res_planet_a, pos_planet_a),
-                              (res_planet_b, pos_planet_b),
-                              (res_planet_c, pos_planet_c),
-                              (res_planet_d, pos_planet_d),
-                              (res_planet_e, pos_planet_e),
-                              (res_planet_f, pos_planet_f)]
+    Returns:
+        1. fp_residual - residual without any fake planets as 2D numpy array.
+        2. planet_dict - A dictionary with keys = Experiment ID. For every ID a\
+            list is given which contains tuples of the residual and the \
+            position of the corresponding fake planet. E.g.:
 
-        - idx_table: Pandas lookup table which links separation and flux_ratio
-            to its experiment ID used by planet_dict
+            .. highlight:: python
+            .. code-block:: python
+
+                planet_dict["0001"] = [
+                    (res_planet_a, pos_planet_a),
+                    (res_planet_b, pos_planet_b),
+                    (res_planet_c, pos_planet_c),
+                    (res_planet_d, pos_planet_d),
+                    (res_planet_e, pos_planet_e),
+                    (res_planet_f, pos_planet_f)]
+
+        3. idx_table - Pandas table which links separation and flux_ratio
+        to its experiment ID used by planet_dict.
+
     """
 
     # FIRST STEP: Read in all config files and .fits residuals. The sorting step
     # has to be performed afterwards as the configs which have been computed are
     # unknown in advance
 
-    fp_residual = None
+    fp_residual = np.ndarray([0, ])
 
     # collects all results based on their ID
     result_collection = dict()
@@ -229,10 +247,11 @@ def add_fake_planets(
         parang: np.array,
         dit_science: float,
         dit_psf_template: float,
-        experiment_config: dict,
-        scaling_factor=1):
+        experiment_config: Dict[str, Any],
+        scaling_factor: int = 1
+) -> np.ndarray:
     """
-    Function which adds fake planets to ADI data based on a contrast map
+    Function which adds fake planets to an ADI data set based on a contrast grid
     config file.
 
     Args:
@@ -241,15 +260,15 @@ def add_fake_planets(
         psf_template: 2D numpy array of the unsaturated PSF used to create
             the fake planets. The template has to be in accordance to the
             integration time used for it. No normalization!
-        parang: Parallactic angles 1D numpy array (rad)
-        dit_science: integration time used for the science frames
-        dit_psf_template: integration time used for the psf template
-        experiment_config: configuration dict containing the information about
-            where and how to add the fake planet
-        scaling_factor: additional scaling factor e.g. needed for ND filter
-            in M-band
+        parang: Parallactic angles as a 1D numpy array (rad)
+        dit_science: Integration time of the science frames.
+        dit_psf_template: Integration time of the psf_template.
+        experiment_config: Configuration dict containing the information about
+            where and how to add the fake planet.
+        scaling_factor: A scaling factor to account for e.g. ND filters.
 
-    Returns: the input stack with the fake planet (3D numpy array)
+    Returns:
+        The input_stack with the added fake planet (3D numpy array).
     """
 
     # The IDX 0 case with no fake planets
@@ -302,24 +321,41 @@ def add_fake_planets(
 
 
 def merge_fake_planet_residuals(
-        planet_dict,
-        idx_table):
+        planet_dict: Dict[int,
+                          List[Tuple[np.ndarray,
+                                     List[float]]]],
+        idx_table: pd.DataFrame
+) -> np.ndarray:
     """
     Function needed to merge residual frames collected with
     sort_results into one numpy array with dimensions:
+
         (num_separations, num_flux_ratios, num_planets, x, y)
 
     Args:
         planet_dict: A dictionary with keys = Experiment ID. For every ID a
             list is given which contains tuples of the residual and the position
-            of the corresponding fake planet. See sort_results
+            of the corresponding fake planet. E.g.:
 
-        idx_table: Pandas lookup table which links separation and flux_ratio
-            to its experiment ID used by planet_dict
+            .. highlight:: python
+            .. code-block:: python
+
+                planet_dict["0001"] = [
+                    (res_planet_a, pos_planet_a),
+                    (res_planet_b, pos_planet_b),
+                    (res_planet_c, pos_planet_c),
+                    (res_planet_d, pos_planet_d),
+                    (res_planet_e, pos_planet_e),
+                    (res_planet_f, pos_planet_f)]
+
+        idx_table: Pandas table which links separation and flux_ratio
+            to its experiment ID as used by planet_dict.
 
     Returns:
+        The merged residuals as one np.array.
 
     """
+
     residuals_paired = np.array([[y[0] for y in x]
                                  for _, x in planet_dict.items()])
 

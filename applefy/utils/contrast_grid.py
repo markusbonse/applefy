@@ -58,7 +58,7 @@ def _compute_median_confidence(
 
 
 def compute_contrast_grid(
-        planet_dict: Dict[str,
+        planet_dict: Dict[int,
                           List[Tuple[np.ndarray,
                                      List[float]]]],
         idx_table: pd.DataFrame,
@@ -114,8 +114,7 @@ def compute_contrast_grid(
         num_cores: Number of CPU cores used for a parallel computation of the
             grid values.
         num_rot_iter: Number of tests performed with different positions of the
-            noise values. See `Figure 02 <../04_apples_with_apples/\
-paper_experiments/02_Rotation.ipynb>`_ for more information.
+            noise values. See `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_ for more information.
         safety_margin: Area around the planet [pixel] which is excluded from
             the noise. This can be useful in case the planet has negative wings.
 
