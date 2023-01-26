@@ -1,30 +1,35 @@
 """
-Tools used to run the Monte Carlo simulations of the Apples wit Apples paper.
+Tools used to run the Monte Carlo simulations of the Apples with Apples paper.
 This code is only needed to reproduce the results of the paper.
 """
-import numpy as np
+
+from typing import Union, Tuple
 from multiprocessing import Pool, shared_memory
+
+import numpy as np
 
 
 def draw_noise(
-        distribution,
-        num_draws,
-        num_noise_observations,
-        loc_noise,
-        scale_noise):
+        distribution: str,
+        num_draws: int,
+        num_noise_observations: int,
+        loc_noise: float,
+        scale_noise: float
+) -> np.ndarray:
     """
-    Simple function to draw noise for the MC simulation
+    Simple function to draw noise for the MC simulation.
 
     Args:
-        distribution: type of the noise: gaussian / laplace
-        num_draws: number of noise samples
+        distribution: Type of the noise: gaussian / laplace
+        num_draws: Number of noise samples.
         num_noise_observations: sample size i.e. number of noise values
-            at a given separation
+            at a given separation from the star.
         loc_noise: The location of the noise i.e. the center of the pdf.
         scale_noise: The width of the distribution. In case of gaussian noise
             this is the std. For the laplace this is b.
 
-    Returns: np.array containing the noise
+    Returns:
+        numpy array with noise. Shape (num_draws, num_noise_observations)
 
     """
     if distribution == "gaussian":
@@ -36,30 +41,29 @@ def draw_noise(
 
 
 def draw_mp(
-        shared_memory_parameters,
-        num_sub_draws,
-        distribution,
-        num_noise_observations,
-        idx,
-        loc_noise,
-        scale_noise):
+        shared_memory_parameters: Tuple[str, Tuple[int]],
+        num_sub_draws: int,
+        distribution: str,
+        num_noise_observations: int,
+        idx: int,
+        loc_noise: float,
+        scale_noise: float
+) -> None:
     """
-    Function to sample noise using multiprocessing
+    Function to sample noise using multiprocessing and shared_memory.
+
     Args:
-        shared_memory_parameters: tuple containing:
-            (the name of the shared memory, the shared memory size)
-        num_sub_draws: number of samples to draw
-        distribution: type of the noise: gaussian / laplace
-        num_noise_observations:  sample size i.e. number of noise values
-            at a given separation
+        shared_memory_parameters: tuple containing: (the name of the shared
+            memory, the shared memory size)
+        num_sub_draws: number of samples to draw.
+        distribution: Type of the noise: gaussian / laplace.
+        num_noise_observations: Sample size i.e. number of noise values
+            at a given separation.
         idx: index of the multiprocessing experiment. Needed to tell the
-            subprocess where to store the results within the shared memory
+            subprocess where to store the results within the shared memory.
         loc_noise: The location of the noise i.e. the center of the pdf.
         scale_noise: The width of the distribution. In case of gaussian noise
             this is the std. For the laplace this is b.
-
-    Returns: None
-
     """
     # setup link to the shared memory
     shared_memory_name, memory_size = shared_memory_parameters
@@ -86,12 +90,13 @@ def draw_mp(
 
 
 def draw_mc_sample(
-        num_noise_observations,
-        num_draws=1,
-        noise_distribution="gaussian",
-        loc_noise=0,
-        scale_noise=1,
-        num_cores=1):
+        num_noise_observations: int,
+        num_draws: int = 1,
+        noise_distribution: str = "gaussian",
+        loc_noise: float = 0.,
+        scale_noise: float = 1.,
+        num_cores: int = 1
+) -> Tuple[np.ndarray, np.ndarray, Union[None, shared_memory.SharedMemory]]:
     """
     Function for efficient noise sampling in the MC simulation. If more than
     10e6 noise values are requested multiprocessing will be used.
@@ -107,11 +112,13 @@ def draw_mc_sample(
         num_cores: number of CPU cores to use i.e. parallel processes.
 
     Returns:
-        planet_observation: np.array containing (num_draws) noise values
-        noise_observation: np.array containing (num_draws,
-            num_noise_observations) noise values
-        shared_np_array: if num_draws > 10e6: instance of the shared memory used
-            during multiprocessing. Else None.
+        1. planet_observation - np.array containing (num_draws) noise values
+
+        2. noise_observation - np.array containing (num_draws,
+        num_noise_observations) noise values
+
+        3. shared_np_array-  if num_draws greater 10e6 instance of the shared
+        memory used during multiprocessing. Else None.
     """
 
     # make sure num_draws is an int

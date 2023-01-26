@@ -35,3 +35,8 @@ Contrast Grids
 ---------------
 .. automodule:: applefy.utils.contrast_grid
    :members:
+
+Monte Carlo Simulations
+-----------------------
+.. automodule:: applefy.utils.mc_simulations
+   :members:
