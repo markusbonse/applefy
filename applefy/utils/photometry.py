@@ -5,10 +5,10 @@ pixel values.
 import warnings
 from abc import ABC, abstractmethod
 
-from typing import Tuple, List, Dict, Union, Optional
+from typing import Tuple, List, Union, Optional
 
 import numpy as np
-from photutils import aperture_photometry, CircularAperture
+from photutils.aperture import aperture_photometry, CircularAperture
 from astropy.modeling import models, fitting
 
 from applefy.utils.positions import get_number_of_apertures,\
@@ -47,7 +47,7 @@ def mag2flux_ratio(
     return 10 ** (-magnitudes / 2.5)
 
 
-class AperturePhotometryMode(object):
+class AperturePhotometryMode:
     """
     A capsule to manage the parameters of how photometry is calculated on
     residuals frames. The function is a wrapper of the parameters
@@ -148,6 +148,8 @@ class AperturePhotometryMode(object):
         if self.flux_mode == "PG":
             return other_aperture_mode.flux_mode in ["PG", ]
 
+        return False
+
 
 def get_flux(
         frame: np.ndarray,
@@ -206,13 +208,13 @@ def get_flux(
 
         return best_position, best_aperture_sum
 
-    elif photometry_mode.flux_mode in ["F", "FS"]:
+    if photometry_mode.flux_mode in ["F", "FS"]:
         # Modes with Gaussian fit
 
         # Define the grid for the fit
-        x = np.arange(frame.shape[0])
-        y = np.arange(frame.shape[1])
-        x, y = np.meshgrid(x, y)
+        x_range = np.arange(frame.shape[0])
+        y_range = np.arange(frame.shape[1])
+        x_range, y_range = np.meshgrid(x_range, y_range)
 
         # Create a new Gaussian2D object
         gaussian_model = models.Gaussian2D(x_mean=position[0],
@@ -243,14 +245,18 @@ def get_flux(
         fit_p = fitting.LevMarLSQFitter()
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            gaussian_model = fit_p(gaussian_model, x, y, np.nan_to_num(frame))
+            gaussian_model = fit_p(
+                gaussian_model,
+                x_range,
+                y_range,
+                np.nan_to_num(frame))
 
         position = (gaussian_model.x_mean.value, gaussian_model.y_mean.value)
 
         # estimate the flux on the fit input_residual_frame
         # We can not use the amplitude directly as it is not comparable with
         # noise values which are e.g. estimated in pixel mode
-        fit_result = gaussian_model(x, y)
+        fit_result = gaussian_model(x_range, y_range)
 
         tmp_aperture = CircularAperture(positions=position,
                                         r=0.5)
@@ -263,13 +269,11 @@ def get_flux(
 
         return position, flux
 
-    else:
+    # cast clamp the position to the next pixel
+    new_position = tuple(np.round(np.array(position)))
+    flux = frame[int(new_position[0]), int(new_position[1])]
 
-        # cast clamp the position to the next pixel
-        new_position = tuple(np.round(np.array(position)))
-        flux = frame[int(new_position[0]), int(new_position[1])]
-
-        return new_position, flux
+    return new_position, flux
 
 
 class IterNoise(ABC):
