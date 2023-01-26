@@ -1,16 +1,20 @@
 """
-All util functions needed to estimate apertures positions
+Util functions needed to estimate noise positions in residuals and raw data.
 """
-from typing import Tuple
 
-import numpy as np
-import math
+from typing import Tuple, List
 from itertools import filterfalse
 
+import math
+import numpy as np
 
-def get_number_of_apertures(separation, psf_fwhm_radius):
+
+def get_number_of_apertures(
+        separation: float,
+        psf_fwhm_radius: float
+) -> int:
     """
-    Estimate the number of available aperture or independent pixel positions
+    Estimates the number of available aperture or independent pixel positions
     for a given separation.
 
     Args:
@@ -19,7 +23,7 @@ def get_number_of_apertures(separation, psf_fwhm_radius):
             that at least two radii are between them.
 
     Returns:
-        the number of apertures at the given separation
+        The number of apertures at the given separation.
 
     """
 
@@ -27,13 +31,14 @@ def get_number_of_apertures(separation, psf_fwhm_radius):
 
 
 def estimate_noise_positions(
-        separation,
-        center,
-        psf_fwhm_radius,
-        angle_offset=0.0):
+        separation: float,
+        center: Tuple[float, float],
+        psf_fwhm_radius: float,
+        angle_offset: float = 0.0
+) -> List[Tuple[float, float, float, float]]:
     """
     Calculation of aperture or independent pixel positions ordered on a ring
-    around the center
+    around the center.
 
     Args:
         separation: Separation of the ring from the center [pixel]
@@ -67,21 +72,22 @@ def estimate_noise_positions(
 
 
 def estimate_reference_positions(
-        planet_position,
-        center,
-        psf_fwhm_radius,
-        angle_offset=0.0,
-        safety_margin=0.0):
+        planet_position: Tuple[float, float],
+        center: Tuple[float, float],
+        psf_fwhm_radius: float,
+        angle_offset: float = 0.0,
+        safety_margin: float = 0.0
+) -> List[Tuple[float, float, float, float]]:
     """
     Calculation of aperture positions or independent pixels ordered on a ring
     around the center. The separation of the ring is given by the distance of
     the planet_position to the center. Apertures which are closer than
     safety_margin to the planet are ignored.
-    
+
     Args:
         planet_position: The position of the planet. Is used to determine the
-            separation and exclusion region. [tuple - (x, y) pixel]
-        center: Position of the center [tuple - (x, y) pixel]
+            separation and exclusion region. [pixel]
+        center: Position of the center [pixel]
         psf_fwhm_radius: Radius [pixel]. positions are placed such that at
             least two radii are between them.
         angle_offset: offset angle [rad] which is applied to rotate the
@@ -93,7 +99,6 @@ def estimate_reference_positions(
         A list of tuples (x_pos, y_pos, separation, angle)
         containing the positions of the apertures
     """
-
     # Ignore the aperture of the planet
     safety_margin += 2 * psf_fwhm_radius
 
@@ -121,7 +126,7 @@ def estimate_reference_positions(
 
 def center_subpixel(image: np.ndarray) -> Tuple[float, float]:
     """
-    Code copied from pynpoint
+    Code copied from `PynPoint <https://pynpoint.readthedocs.io/en/latest/>`_.
 
     Function to get the precise position of the image center. The center of the
     pixel in the bottom left corner of the image is defined as (0, 0), so the
@@ -132,7 +137,6 @@ def center_subpixel(image: np.ndarray) -> Tuple[float, float]:
             Input image (2D or 3D).
 
     Returns:
-        tuple(float, float)
         Subpixel position (y, x) of the image center.
     """
 
