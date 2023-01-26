@@ -10,6 +10,7 @@ Photometry
 ----------
 .. automodule:: applefy.utils.photometry
    :members:
+   :special-members: __init__, __iter__, _calc_angle_offsets
 
 File Handling
 -------------

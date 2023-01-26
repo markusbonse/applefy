@@ -106,7 +106,7 @@ def compute_contrast_curve(
             residual=fp_residual,
             separation=tmp_separation,
             psf_fwhm_radius=psf_fwhm_radius,
-            num_iterations=num_rot_iter,
+            num_rot_iter=num_rot_iter,
             photometry_mode=photometry_mode_noise,
             max_rotation=360)
 

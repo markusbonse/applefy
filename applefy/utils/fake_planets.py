@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.ndimage import shift
 
-from applefy.utils.positions import estimate_aperture_positions, center_subpixel
+from applefy.utils.positions import estimate_noise_positions, center_subpixel
 
 
 def calculate_fake_planet_positions(
@@ -52,7 +52,7 @@ def calculate_fake_planet_positions(
     planet_positions = dict()
 
     for tmp_separations in separations:
-        tmp_positions = estimate_aperture_positions(
+        tmp_positions = estimate_noise_positions(
             tmp_separations,
             center=center,
             psf_fwhm_radius=psf_fwhm_radius)
@@ -252,7 +252,7 @@ def add_fake_planets(
         dit_science: float,
         dit_psf_template: float,
         experiment_config: Dict[str, Any],
-        scaling_factor: int = 1
+        scaling_factor: float = 1.
 ) -> np.ndarray:
     """
     Function which adds fake planets to an ADI data set based on a contrast grid

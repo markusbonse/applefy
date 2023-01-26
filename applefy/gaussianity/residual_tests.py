@@ -205,7 +205,7 @@ def test_normality_shapiro_wilk(
         residual=input_residual_frame,
         separation=separation * size_resolution_elements,
         psf_fwhm_radius=size_resolution_elements / 2.,
-        num_iterations=num_rot_iter,
+        num_rot_iter=num_rot_iter,
         photometry_mode=photometry_mode)
 
     # 2.) Loop over the noise elements and collect the p-values of the test

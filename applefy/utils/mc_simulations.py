@@ -35,9 +35,9 @@ def draw_noise(
     if distribution == "gaussian":
         return np.random.normal(loc=loc_noise, scale=scale_noise,
                                 size=(num_draws, num_noise_observations))
-    else:
-        return np.random.laplace(loc=loc_noise, scale=scale_noise,
-                                 size=(num_draws, num_noise_observations))
+
+    return np.random.laplace(loc=loc_noise, scale=scale_noise,
+                             size=(num_draws, num_noise_observations))
 
 
 def draw_mp(
@@ -141,23 +141,23 @@ def draw_mc_sample(
                               buffer=shared_np_array.buf)
 
         # Create the multiprocessing Pool
-        pool = Pool(processes=num_cores)
+        with Pool(processes=num_cores) as pool:
 
-        if num_draws % 100 != 0:
-            raise ValueError("Only num_draws dividable by 100 are supported")
+            if num_draws % 100 != 0:
+                raise ValueError(
+                    "Only num_draws dividable by 100 are supported")
 
-        # We create 100 subtasks. Every subtask samples 1/100 of the total noise
-        # needed for the MC simulation
-        draws_per_task = int(num_draws / 100)
-        pool.starmap(draw_mp, [(memory_parameters,
-                                int(draws_per_task),
-                                noise_distribution,
-                                int(num_noise_observations + 1),
-                                j,
-                                loc_noise,
-                                scale_noise) for j in range(100)])
+            # We create 100 subtasks. Every subtask samples 1/100 of the total
+            # noise needed for the MC simulation
+            draws_per_task = int(num_draws / 100)
+            pool.starmap(draw_mp, [(memory_parameters,
+                                    int(draws_per_task),
+                                    noise_distribution,
+                                    int(num_noise_observations + 1),
+                                    j,
+                                    loc_noise,
+                                    scale_noise) for j in range(100)])
 
-        pool.close()
 
         # copy the results from the buffer
         planet_observation = np_array[:, 0].reshape(num_draws)

@@ -26,7 +26,7 @@ def get_number_of_apertures(separation, psf_fwhm_radius):
     return int(math.floor(math.pi * separation / psf_fwhm_radius))
 
 
-def estimate_aperture_positions(
+def estimate_noise_positions(
         separation,
         center,
         psf_fwhm_radius,
@@ -102,7 +102,7 @@ def estimate_reference_positions(
                               np.array(center))
 
     # 2.) sample positions
-    test_positions = estimate_aperture_positions(
+    test_positions = estimate_noise_positions(
         distance,
         center=center,
         psf_fwhm_radius=psf_fwhm_radius,

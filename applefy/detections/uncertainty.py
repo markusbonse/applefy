@@ -83,7 +83,7 @@ def compute_detection_uncertainty(
                                         planet_position=planet_position[:2],
                                         safety_margin=safety_margin,
                                         psf_fwhm_radius=psf_fwhm_radius,
-                                        num_iterations=num_rot_iter,
+                                        num_rot_iter=num_rot_iter,
                                         max_rotation=None,
                                         photometry_mode=photometry_mode_noise)
 
