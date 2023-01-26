@@ -29,8 +29,8 @@ from applefy.utils.fake_planets import sort_fake_planet_results, \
     merge_fake_planet_residuals
 from applefy.utils.throughput import compute_throughput_table
 from applefy.utils.contrast_curve import compute_contrast_curve
-from applefy.utils.contrast_grid import compute_contrast_map, \
-    compute_contrast_from_map
+from applefy.utils.contrast_grid import compute_contrast_grid, \
+    compute_contrast_from_grid
 
 
 class Contrast:
@@ -854,6 +854,10 @@ class ContrastResult:
         Calculates the contrast grid as shown in [ref]. The contrast grid shows
         the detection uncertainty as a function of separation from the star and
         fake planet flux_ratio. It evaluates the fake planet residuals directly.
+        Compared to the function :meth:`~compute_analytic_contrast_curve` this
+        function is applicable not only to residuals of linear PSF-subtraction
+        methods like PCA, but in general.
+        This allows to compare results of different methods.
         The results are computed using multiprocessing.
 
         Args:
@@ -888,10 +892,10 @@ class ContrastResult:
 
         """
 
-        contrast_map = compute_contrast_map(
+        contrast_map = compute_contrast_grid(
             planet_dict=self.planet_dict,
             idx_table=self.idx_table,
-            test_statistic=statistical_test,
+            statistical_test=statistical_test,
             psf_fwhm_radius=self.psf_fwhm_radius,
             photometry_mode_planet=self.planet_mode,
             photometry_mode_noise=self.noise_mode,
@@ -901,7 +905,7 @@ class ContrastResult:
 
         if isinstance(confidence_level_fpf, (float, np.floating)):
             # compute the contrast curve
-            contrast_curve = compute_contrast_from_map(
+            contrast_curve = compute_contrast_from_grid(
                 contrast_map,
                 confidence_level_fpf)
 

@@ -1,3 +1,11 @@
+"""
+Util functions needed to compute contrast grids. The recommended way
+to compute contrast grids is to use the class
+:meth:`~applefy.detections.contrast.Contrast` and not the util functions.
+"""
+
+from typing import Tuple, List, Dict
+
 import multiprocessing
 from copy import deepcopy
 
@@ -12,25 +20,25 @@ from applefy.utils.photometry import AperturePhotometryMode, flux_ratio2mag, \
 
 
 def _compute_median_confidence(
-        fake_planet_residuals,
-        fake_planet_positions,
-        separation,
-        flux_ratio,
-        test_statistic,
-        psf_fwhm_radius,
-        photometry_mode_planet,
-        photometry_mode_noise,
-        num_rot_iter=20,
-        safety_margin=1.0):
+        fake_planet_residuals: np.ndarray,
+        fake_planet_positions: List[Tuple[float, float]],
+        separation: float,
+        flux_ratio: float,
+        test_statistic: TestInterface,
+        psf_fwhm_radius: float,
+        photometry_mode_planet: AperturePhotometryMode,
+        photometry_mode_noise: AperturePhotometryMode,
+        num_rot_iter: int = 20,
+        safety_margin: float = 1.0
+) -> Tuple[float, float, float]:
     """
-    Function used in compute_contrast_map to compute the  fpf of all fake
+    Function used in compute_contrast_map to compute the fpf of all fake
     planet residuals using multiprocessing. For more information about the
-    input parameters check the documentation of the original function.
+    input parameters check the documentation of the main function.
     """
 
     all_p_values = []
-    for i in range(len(fake_planet_residuals)):
-        tmp_fake_planet_residual = fake_planet_residuals[i]
+    for i, tmp_fake_planet_residual in enumerate(fake_planet_residuals):
         tmp_planet_position = fake_planet_positions[i]
 
         tmp_median_p, _, _ = compute_detection_uncertainty(
@@ -46,59 +54,73 @@ def _compute_median_confidence(
         all_p_values.append(tmp_median_p)
 
     print(".", end='')
-    return separation, flux_ratio, np.median(all_p_values)
+    return separation, flux_ratio, float(np.median(all_p_values))
 
 
-def compute_contrast_map(
-        planet_dict,
-        idx_table,
-        test_statistic: TestInterface,
-        psf_fwhm_radius,
+def compute_contrast_grid(
+        planet_dict: Dict[str,
+                          List[Tuple[np.ndarray,
+                                     List[float]]]],
+        idx_table: pd.DataFrame,
+        statistical_test: TestInterface,
+        psf_fwhm_radius: float,
         photometry_mode_planet: AperturePhotometryMode,
         photometry_mode_noise: AperturePhotometryMode,
-        num_cores=1,
-        num_rot_iter=20,
-        safety_margin=1.0):
+        num_cores: int = 1,
+        num_rot_iter: int = 20,
+        safety_margin: float = 1.0
+) -> pd.DataFrame:
     """
-    Computes a contrast map for a given set of fake planet residuals.
-    Supports all statistical tests implemented in apelfei.statistics. Compared
-    to the function compute_contrast_curve this function is applicable not only
-    to residuals of PSF-subtraction methods (such as PCA), but in general. This
-    allows to compare results of different methods from PSF-subtraction and
-    Forward-modelling.
+    Computes a contrast grid for a given set of fake planet residuals.
+    Supports all statistical tests implemented in
+    `Statistics <statistics.html>`_. Compared to the function
+    :meth:`~applefy.utils.contrast_curve.compute_contrast_curve` this function
+    is applicable not only to residuals of linear PSF-subtraction methods
+    like PCA, but in general. This allows to compare results of different
+    methods.
 
     Args:
         planet_dict: A dictionary with keys = Experiment ID. For every ID a
             list is given which contains tuples of the residual and the position
             of the corresponding fake planet. E.g.:
 
-            planet_dict[1] = [(res_planet_a, pos_planet_a),
-                              (res_planet_b, pos_planet_b),
-                              (res_planet_c, pos_planet_c),
-                              (res_planet_d, pos_planet_d),
-                              (res_planet_e, pos_planet_e),
-                              (res_planet_f, pos_planet_f)]
-        idx_table: Pandas lookup table which links separation and flux_ratio
-            to its experiment ID used by planet_dict
-        test_statistic: The test statistic used to constrain the planet flux
-            needed. For classical TTest curves use an instance of
-            apelfei.statistics.parametric.TTest.
-        psf_fwhm_radius: The size (radius) of resolution elements. It is used
-            to sample independent noise values i.e. it sets the spacing between
-            noise observations sampled from the fp_residual.
+            .. highlight:: python
+            .. code-block:: python
+
+                planet_dict["0001"] = [
+                    (res_planet_a, pos_planet_a),
+                    (res_planet_b, pos_planet_b),
+                    (res_planet_c, pos_planet_c),
+                    (res_planet_d, pos_planet_d),
+                    (res_planet_e, pos_planet_e),
+                    (res_planet_f, pos_planet_f)]
+
+        idx_table: Pandas table which links separation and flux_ratio
+            to its experiment ID as used by planet_dict.
+        statistical_test: The test used to constrain the planet flux
+            needed to be counted as a detection.
+            For the classical TTest (Gaussian noise) use an instance of
+            :meth:`~applefy.statistics.parametric.TTest`. For Laplacian
+            noise use
+            :meth:`~applefy.statistics.bootstrapping.LaplaceBootstrapTest`.
+        psf_fwhm_radius: The FWHM (radius) of the PSF. It is needed to
+            sample independent noise values i.e. it determines the
+            spacing between the noise observations which are extracted
+            from the fp_residual.
         photometry_mode_planet: An instance of AperturePhotometryMode which
             defines how the flux is measured at the planet positions.
         photometry_mode_noise: An instance of AperturePhotometryMode which
             defines how the noise photometry is measured.
         num_cores: Number of CPU cores used for a parallel computation of the
-            map values.
-        num_rot_iter: Number of tests performed with different noise
-            aperture positions. The classical Mawet et al. 2014 contrast curves
-            do not consider this source of error.
-        safety_margin: Area around the planet which is excluded from the noise.
-            This can be useful in case the planet has negative wings.
+            grid values.
+        num_rot_iter: Number of tests performed with different positions of the
+            noise values. See `Figure 02 <../04_apples_with_apples/\
+paper_experiments/02_Rotation.ipynb>`_ for more information.
+        safety_margin: Area around the planet [pixel] which is excluded from
+            the noise. This can be useful in case the planet has negative wings.
 
-    Returns: The contrast map containing fpf values as a pandas DataFrame
+    Returns:
+        The contrast map containing p-values / fpf values as a pandas DataFrame.
 
     """
 
@@ -117,7 +139,7 @@ def compute_contrast_map(
                                              tmp_planet_positions,
                                              tmp_separation,
                                              tmp_flux_ratio,
-                                             test_statistic,
+                                             statistical_test,
                                              psf_fwhm_radius,
                                              photometry_mode_planet,
                                              photometry_mode_noise,
@@ -125,13 +147,11 @@ def compute_contrast_map(
                                              safety_margin))
 
     # 2.) Run evaluations with multiprocessing
-    pool = multiprocessing.Pool(processes=num_cores)
-    print("Computing contrast map with multiprocessing:")
-    mp_results = pool.starmap(_compute_median_confidence,
-                              all_parallel_experiments)
-
-    pool.close()
-    pool.join()
+    with multiprocessing.Pool(processes=num_cores) as pool:
+        print("Computing contrast map with multiprocessing:")
+        mp_results = pool.starmap(_compute_median_confidence,
+                                  all_parallel_experiments)
+        pool.join()
     print("[DONE]")
 
     # 4.) Reshape and return the results
@@ -149,33 +169,35 @@ def compute_contrast_map(
     return contrast_map
 
 
-def compute_contrast_from_map(
-        contrast_map_fpf,
-        fpf_threshold):
+def compute_contrast_from_grid(
+        contrast_grid_fpf: pd.DataFrame,
+        fpf_threshold: float
+) -> pd.DataFrame:
     """
-    This function allows to obtain a contrast curve from a contrast map by
+    This function allows to obtain a contrast curve from a contrast grid by
     interpolation and thresholding. Contains np.inf values in case the contrast
-    can not be reached within the contrast map value range space.
+    can not be reached within the contrast grid.
 
     Args:
-        contrast_map_fpf: The contrast map as 2D array as returned by
-            compute_contrast_map. The flux ratios have to be in fraction not
-            mag!
-        fpf_threshold: The desired contrast as fpf
+        contrast_grid_fpf: The contrast grid as 2D pandas Table as returned by
+            :meth:`~compute_contrast_grid`. The flux ratios have to be in
+            fraction not mag!
+        fpf_threshold: The desired detection threshold as fpf.
 
-    Returns: A 1D pandas array containing the contrast curve
+    Returns:
+        A 1D pandas array containing the contrast curve.
 
     """
     # Transform the fpf threshold to a threshold in terms of gaussian sigma.
     # This helps to get more accurate interpolation results
     threshold = fpf_2_gaussian_sigma(fpf_threshold)
 
-    if contrast_map_fpf.index.values[0] > 1:
+    if contrast_grid_fpf.index.values[0] > 1:
         raise ValueError("The contrast map flux ratios have to be in ratios "
                          " not magnitudes.")
 
     # we use interpolation in mag. This allows us to use in linspace
-    local_contrast_map_fpf = deepcopy(contrast_map_fpf)
+    local_contrast_map_fpf = deepcopy(contrast_grid_fpf)
     local_contrast_map_fpf.index = flux_ratio2mag(local_contrast_map_fpf.index)
 
     contrast_mag = local_contrast_map_fpf.index.values
@@ -188,9 +210,11 @@ def compute_contrast_from_map(
     for tmp_sep, fpf_values in local_contrast_map_fpf.items():
 
         # Create the interpolation function
-        tmp_contrast_func = interp1d(contrast_mag,
-                                     fpf_2_gaussian_sigma(fpf_values),
-                                     kind="linear")
+        tmp_contrast_func = interp1d(
+            contrast_mag,
+            fpf_2_gaussian_sigma(fpf_values.values),
+            kind="linear")
+
         # interpolate the contrast map
         tmp_interpolated_results = tmp_contrast_func(interpolation_range)
 

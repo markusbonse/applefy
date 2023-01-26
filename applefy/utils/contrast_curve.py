@@ -5,7 +5,7 @@ to compute contrast curves is to use the class
 """
 
 import warnings
-from typing import List, Dict, Optional, Union, Tuple, Any
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
