@@ -571,7 +571,7 @@ class Contrast:
             print("Computing contrast curve for " + str(key))
             tmp_contrast_curve, tmp_contrast_curve_error = \
                 tmp_result.compute_analytic_contrast_curve(
-                    test_statistic=statistical_test,
+                    statistical_test=statistical_test,
                     num_rot_iter=num_rot_iter,
                     confidence_level_fpf=confidence_level_fpf)
 
@@ -824,7 +824,7 @@ class ContrastResult:
             stellar_flux=self.stellar_flux,
             fp_residual=self.fp_residual,
             confidence_level_fpf=confidence_level_fpf,
-            test_statistic=statistical_test,
+            statistical_test=statistical_test,
             psf_fwhm_radius=self.psf_fwhm_radius,
             photometry_mode_noise=self.noise_mode,
             num_rot_iter=num_rot_iter)

@@ -1,4 +1,11 @@
+"""
+Util functions needed to compute contrast curves. The recommended way
+to compute contrast curves is to use the class
+:meth:`~applefy.detections.contrast.Contrast` and not the util functions.
+"""
+
 import warnings
+from typing import List, Dict, Optional, Union, Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -6,57 +13,72 @@ from tqdm import tqdm
 from scipy import stats
 
 from applefy.statistics.general import TestInterface
-from applefy.utils.photometry import IterNoiseBySeparation
+from applefy.utils.photometry import IterNoiseBySeparation, \
+    AperturePhotometryMode
 
 
 def compute_contrast_curve(
         throughput_list: pd.DataFrame,
-        stellar_flux,
-        fp_residual,
-        confidence_level_fpf,
-        test_statistic: TestInterface,
-        psf_fwhm_radius,
-        photometry_mode_noise,
-        num_rot_iter=100):
+        stellar_flux: float,
+        fp_residual: np.ndarray,
+        confidence_level_fpf: float,
+        statistical_test: TestInterface,
+        psf_fwhm_radius: float,
+        photometry_mode_noise: AperturePhotometryMode,
+        num_rot_iter: int = 100
+) -> Tuple[np.ndarray, np.ndarray, pd.DataFrame]:
 
     """
-    Computes a contrast curve by using throughput values and solving for the
-    planet flux needed to reach a given confidence. Supports all statistical
-    tests implemented in apelfei.statistics.
+    Computes an analytic contrast curve given a confidence level and a
+    statistical test. Analytic contrast curves are only applicable if used with
+    linear post-processing techniques such as PCA.
+    They can further lead to inaccurate results close to the star. For more
+    advanced post-processing techniques use a contrast grid instead.
+
+    Supports all statistical tests implemented in
+    `Statistics <statistics.html>`_.
 
     Args:
         throughput_list: 1D pandas array of throughput values for every
             separation. (floats in range [0, 1]).
-        stellar_flux: The brightness of the star. The mode used to estimate the
-            stellar_flux has to be compatible with the photometry_mode_noise
-            used here.
+        stellar_flux: The stellar flux measured with
+            :meth:`~applefy.utils.photometry.estimate_stellar_flux`. The mode
+            used to estimate the stellar_flux has to be compatible with the
+            photometry_mode_noise used here.
         fp_residual: A 2D numpy array of shape `(width, height)` containing
             the data on which to run the noise statistics. This is usually the
             residual without fake planets.
-        confidence_level_fpf: The confidence level associated with the contrast
-            curve. Can be a single fpf value (float) or a list of fpf values for
-            every separation. In case a list is given the number of fpf values
+        confidence_level_fpf: The confidence level associated with the
+            contrast curve as false-positive fraction (FPF). Can also be a list
+            of fpf values. In case a list is given the number of fpf values
             has to match the number of values in the throughput_list.
-        test_statistic: The test statistic used to constrain the planet flux
-            needed. For classical TTest curves use an instance of
-            apelfei.statistics.parametric.TTest.
-        psf_fwhm_radius: The size (radius) of resolution elements. It is used
-            to sample independent noise values i.e. it sets the spacing between
-            noise observations sampled from the fp_residual.
+        statistical_test: The test used to constrain the planet flux
+            needed to be counted as a detection.
+            For the classical TTest (Gaussian noise) use an instance of
+            :meth:`~applefy.statistics.parametric.TTest`. For Laplacian
+            noise use
+            :meth:`~applefy.statistics.bootstrapping.LaplaceBootstrapTest`.
+        psf_fwhm_radius: The FWHM (radius) of the PSF. It is needed to
+            sample independent noise values i.e. it determines the
+            spacing between the noise observations which are extracted
+            from the fp_residual.
         photometry_mode_noise: An instance of AperturePhotometryMode which
             defines how the noise photometry is measured.
-        num_rot_iter: Number of tests performed with different noise
-            aperture positions. The classical Mawet et al. 2014 contrast curves
-            do not consider this source of error.
+        num_rot_iter: Number of tests performed with different positions of
+            the noise values. See
+            `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+            for more information.
 
     Returns:
-        Tuple of:
-            median_contrast_curve - The median of all num_rot_iterations
-                contrast curves
-            mad_contrast_curve_error - The median absolute deviation of all
-                num_rot_iterations contrast curves
-            contrast_curves - A pandas DataFrame containing all
-                num_rot_iterations contrast curves calculated.
+        1. median_contrast_curve - The median of all num_rot_iter contrast
+        curves.
+
+        2. mad_contrast_curve_error - The median absolute deviation of all
+        num_rot_iter contrast curves.
+
+        3. contrast_curves - A pandas DataFrame containing all individual
+        num_rot_iter contrast curves calculated.
+
     """
 
     # 1.) check confidence_level
@@ -93,7 +115,7 @@ def compute_contrast_curve(
             tmp_noise_at_planet = tmp_observations[0]
             tmp_noise_sample = tmp_observations[1:]
 
-            residual_flux_needed = test_statistic.constrain_planet(
+            residual_flux_needed = statistical_test.constrain_planet(
                 tmp_noise_at_planet,
                 tmp_noise_sample,
                 tmp_fpf)
