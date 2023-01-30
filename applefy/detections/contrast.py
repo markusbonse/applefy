@@ -11,6 +11,7 @@ from typing import List, Dict, Optional, Union, Tuple, Any
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from tqdm import tqdm
 import pandas as pd
 import numpy as np
 from joblib import Parallel, delayed
@@ -405,11 +406,13 @@ class Contrast:
         # 1. Run the data reduction in parallel
         # The _run_fake_planet_experiment checks if residuals already exist
         # and only computes the missing ones
+        print("Running fake planet experiments...", end="")
         results = Parallel(n_jobs=num_parallel)(
             delayed(self._run_fake_planet_experiment)(
                 algorithm_function,
-                i) for i in self.experimental_setups)
+                i) for i in tqdm(self.experimental_setups))
         tmp_results_dict = dict(results)
+        print("[DONE]")
 
         # 2. Prepare the results for the ContrastResult
         # Invert the dict structure. We want the method names as keys.
