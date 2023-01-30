@@ -150,7 +150,6 @@ def compute_contrast_grid(
         print("Computing contrast grid with multiprocessing:")
         mp_results = pool.starmap(_compute_median_confidence,
                                   all_parallel_experiments)
-        pool.join()
     print("[DONE]")
 
     # 4.) Reshape and return the results
