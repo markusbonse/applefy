@@ -490,14 +490,14 @@ class Contrast:
         """
 
         example_contrast_result = next(iter(self.contrast_results.values()))
-        separations_fwhm_d = \
-            [i / self.psf_fwhm_radius * 2
+        separations_fwhm = \
+            [i / (self.psf_fwhm_radius * 2)
              for i in example_contrast_result.idx_table.index]
 
         # create the index in FWHM and arcsec
         if pixel_scale is None:
             separation_index = pd.Index(
-                separations_fwhm_d,
+                separations_fwhm,
                 name=r"separation [FWHM]")
 
         else:
@@ -506,8 +506,8 @@ class Contrast:
                  for i in example_contrast_result.idx_table.index]
 
             separation_index = pd.MultiIndex.from_tuples(
-                list(zip(separations_fwhm_d, separations_arcsec)),
-                names=[r"separation [$\lambda/D$]",
+                list(zip(separations_fwhm, separations_arcsec)),
+                names=[r"separation [$FWHM$]",
                        "separation [arcsec]"])
 
         return separation_index
