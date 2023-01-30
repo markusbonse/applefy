@@ -32,7 +32,7 @@ def _compute_median_confidence(
         safety_margin: float = 1.0
 ) -> Tuple[float, float, float]:
     """
-    Function used in compute_contrast_map to compute the fpf of all fake
+    Function used in compute_contrast_grid to compute the fpf of all fake
     planet residuals using multiprocessing. For more information about the
     input parameters check the documentation of the main function.
     """
@@ -119,14 +119,14 @@ def compute_contrast_grid(
             the noise. This can be useful in case the planet has negative wings.
 
     Returns:
-        The contrast map containing p-values / fpf values as a pandas DataFrame.
+        The contrast grid containing p-values / fpf values as a pandas DataFrame.
 
     """
 
     # 1.) collect the data for multiprocessing
     all_parallel_experiments = []
 
-    # Loop over idx map. Every tuple (separation_idx, flux_ratio_idx)
+    # Loop over idx grid. Every tuple (separation_idx, flux_ratio_idx)
     # requires a separate calculation with multiprocessing
     for tmp_flux_ratio, tmp_separations in idx_table.items():
         for tmp_separation, exp_idx in tmp_separations.items():
@@ -147,7 +147,7 @@ def compute_contrast_grid(
 
     # 2.) Run evaluations with multiprocessing
     with multiprocessing.Pool(processes=num_cores) as pool:
-        print("Computing contrast map with multiprocessing:")
+        print("Computing contrast grid with multiprocessing:")
         mp_results = pool.starmap(_compute_median_confidence,
                                   all_parallel_experiments)
         pool.join()
@@ -159,13 +159,13 @@ def compute_contrast_grid(
                                              "flux_ratio",
                                              "fpf"])
 
-    contrast_map = results_combined.pivot_table(
+    contrast_grid = results_combined.pivot_table(
         values="fpf",
         index="separation",
         columns="flux_ratio").sort_index(
         axis=1, ascending=False).T
 
-    return contrast_map
+    return contrast_grid
 
 
 def compute_contrast_from_grid(
@@ -192,21 +192,21 @@ def compute_contrast_from_grid(
     threshold = fpf_2_gaussian_sigma(fpf_threshold)
 
     if contrast_grid_fpf.index.values[0] > 1:
-        raise ValueError("The contrast map flux ratios have to be in ratios "
+        raise ValueError("The contrast grid flux ratios have to be in ratios "
                          " not magnitudes.")
 
     # we use interpolation in mag. This allows us to use in linspace
-    local_contrast_map_fpf = deepcopy(contrast_grid_fpf)
-    local_contrast_map_fpf.index = flux_ratio2mag(local_contrast_map_fpf.index)
+    local_contrast_grid_fpf = deepcopy(contrast_grid_fpf)
+    local_contrast_grid_fpf.index = flux_ratio2mag(local_contrast_grid_fpf.index)
 
-    contrast_mag = local_contrast_map_fpf.index.values
+    contrast_mag = local_contrast_grid_fpf.index.values
     interpolation_range = np.linspace(np.max(contrast_mag),
                                       np.min(contrast_mag),
                                       1000000)
 
     contrast_curve = []
 
-    for tmp_sep, fpf_values in local_contrast_map_fpf.items():
+    for tmp_sep, fpf_values in local_contrast_grid_fpf.items():
 
         # Create the interpolation function
         tmp_contrast_func = interp1d(
@@ -214,7 +214,7 @@ def compute_contrast_from_grid(
             fpf_2_gaussian_sigma(fpf_values.values),
             kind="linear")
 
-        # interpolate the contrast map
+        # interpolate the contrast grid
         tmp_interpolated_results = tmp_contrast_func(interpolation_range)
 
         # find the first value above the threshold

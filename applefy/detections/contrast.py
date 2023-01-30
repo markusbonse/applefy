@@ -658,7 +658,7 @@ class Contrast:
         for key, tmp_result in self.contrast_results.items():
             print("Computing contrast curve for " + str(key))
 
-            tmp_contrast_map, tmp_contrast_map_curve = \
+            tmp_contrast_grid, tmp_contrast_grid_curve = \
                 tmp_result.compute_contrast_grid(
                     statistical_test=statistical_test,
                     num_cores=num_cores,
@@ -666,8 +666,8 @@ class Contrast:
                     safety_margin=safety_margin,
                     confidence_level_fpf=confidence_level_fpf)
 
-            contrast_curves[key] = tmp_contrast_map_curve["contrast"].values
-            contrast_grids[key] = tmp_contrast_map
+            contrast_curves[key] = tmp_contrast_grid_curve["contrast"].values
+            contrast_grids[key] = tmp_contrast_grid
 
         # 2.) merge the results of the contrast_curves into one nice table
         separation_index = self._get_result_table_index(pixel_scale)
@@ -892,7 +892,7 @@ class ContrastResult:
 
         """
 
-        contrast_map = compute_contrast_grid(
+        contrast_grid = compute_contrast_grid(
             planet_dict=self.planet_dict,
             idx_table=self.idx_table,
             statistical_test=statistical_test,
@@ -906,12 +906,12 @@ class ContrastResult:
         if isinstance(confidence_level_fpf, (float, np.floating)):
             # compute the contrast curve
             contrast_curve = compute_contrast_from_grid(
-                contrast_map,
+                contrast_grid,
                 confidence_level_fpf)
 
-            return contrast_map, contrast_curve
+            return contrast_grid, contrast_curve
 
-        return contrast_map
+        return contrast_grid
 
 
 class DataReductionInterface(ABC):
