@@ -331,7 +331,6 @@ class Contrast:
 
             # if yes use the restored_residuals
             if restored_residuals:
-                print("Found all residuals for experiment ID: " + exp_id)
                 return exp_id, restored_residuals
 
         # if not run the fake planet experiment

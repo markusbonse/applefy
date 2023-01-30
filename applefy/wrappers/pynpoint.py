@@ -5,7 +5,9 @@ applefy. PynPoint is not on the requirement list of
 applefy. It has to be installed separately.
 """
 
+import sys, os
 import shutil
+import warnings
 from typing import List, Dict
 from pathlib import Path
 
@@ -185,34 +187,42 @@ preparation.generate_fake_planet_experiments` for more information about the
         out_file.close()
 
         # 6.) Create PynPoint Pipeline and run PCA
-        pipeline = Pypeline(working_place_in=str(pynpoint_dir),
-                            input_place_in=str(pynpoint_dir),
-                            output_place_in=str(pynpoint_dir))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # Disable all print messages from pynpoint
+            sys.stdout = open(os.devnull, 'w')
 
-        pipeline.set_attribute("config", "CPU",
-                               attr_value=self.num_cpus_pynpoint)
+            pipeline = Pypeline(working_place_in=str(pynpoint_dir),
+                                input_place_in=str(pynpoint_dir),
+                                output_place_in=str(pynpoint_dir))
 
-        pca_subtraction = PcaPsfSubtractionModule(
-            name_in="pca_subtraction",
-            images_in_tag="data_with_planet",
-            reference_in_tag="data_with_planet",
-            res_mean_tag="residuals_out_mean",
-            res_median_tag=None,
-            res_weighted_tag=None,
-            pca_numbers=self.num_pcas,
-            processing_type="ADI")
+            pipeline.set_attribute("config", "CPU",
+                                   attr_value=self.num_cpus_pynpoint)
 
-        pipeline.add_module(pca_subtraction)
-        pipeline.run_module("pca_subtraction")
+            pca_subtraction = PcaPsfSubtractionModule(
+                name_in="pca_subtraction",
+                images_in_tag="data_with_planet",
+                reference_in_tag="data_with_planet",
+                res_mean_tag="residuals_out_mean",
+                res_median_tag=None,
+                res_weighted_tag=None,
+                pca_numbers=self.num_pcas,
+                processing_type="ADI")
 
-        # 7.) Get the data from the Pynpoint database
-        result_dict = dict()
+            pipeline.add_module(pca_subtraction)
+            pipeline.run_module("pca_subtraction")
 
-        residuals = pipeline.get_data("residuals_out_mean")
-        for idx, tmp_algo_name in enumerate(self.get_method_keys()):
-            result_dict[tmp_algo_name] = residuals[idx]
+            # 7.) Get the data from the Pynpoint database
+            result_dict = dict()
 
-        # Delete the temporary database
-        shutil.rmtree(pynpoint_dir)
+            residuals = pipeline.get_data("residuals_out_mean")
+            for idx, tmp_algo_name in enumerate(self.get_method_keys()):
+                result_dict[tmp_algo_name] = residuals[idx]
+
+            # Delete the temporary database
+            shutil.rmtree(pynpoint_dir)
+
+            # Enable print messages again
+            sys.stdout = sys.__stdout__
 
         return result_dict
