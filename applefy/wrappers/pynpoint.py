@@ -1,4 +1,14 @@
+"""
+The following wrapper classes
+allow to use `PynPoint <https://pynpoint.readthedocs.io/en/latest/>`__ with
+applefy. PynPoint is not on the requirement list of
+applefy. It has to be installed separately.
+"""
+
 import shutil
+from typing import List, Dict
+from pathlib import Path
+
 import h5py
 import numpy as np
 from pynpoint.util.psf import pca_psf_subtraction
@@ -9,18 +19,62 @@ from applefy.detections.contrast import DataReductionInterface
 
 class SimplePCAPynPoint(DataReductionInterface):
 
-    def __init__(self, num_pca):
+    def __init__(
+            self,
+            num_pca: int):
+        """
+        The SimplePCAPynPoint is a wrapper around the simple full frame PCA
+        implemented in `PynPoint <https://pynpoint.readthedocs.io/en/latest/\
+        pynpoint.util.html#pynpoint.util.psf.pca_psf_subtraction>`__.
+        It only allows to compute the residuals for a fixed number of PCA
+        components. The advantage of this wrapper over
+        :meth:`~MultiComponentPCAPynPoint` is, that it does not require to
+        create a PynPoint database file.
+
+
+        Args:
+            num_pca: The number of PCA components to be used.
+
+        """
         self.num_pca = num_pca
 
-    def get_method_keys(self):
+    def get_method_keys(self) -> List[str]:
+        """
+        Get the method name "PCA (#num_pca components)".
+
+        Returns:
+            A list with one string "PCA (#num_pca components)".
+        """
+
         return ["PCA (" + str(self.num_pca).zfill(3) + " components)", ]
 
     def __call__(
             self,
-            stack_with_fake_planet,
-            parang_rad,
-            psf_template,
-            exp_id):
+            stack_with_fake_planet: np.ndarray,
+            parang_rad: np.ndarray,
+            psf_template: np.ndarray,
+            exp_id: str
+    ) -> Dict[str, np.ndarray]:
+        """
+        Compute the full-frame PCA.
+
+        Args:
+            stack_with_fake_planet: A 3d numpy array of the observation
+                sequence. Fake plants are inserted by applefy in advance.
+            parang_rad: A 1d numpy array containing the parallactic angles
+                in radians.
+            psf_template: A 2d numpy array with the psf-template
+                (usually the unsaturated star).
+            exp_id: Experiment ID of the config used to add the fake
+                planet. It is a unique string and can be used to store
+                intermediate results. See :meth:`~applefy.detections.\
+preparation.generate_fake_planet_experiments` for more information about the
+                config files.
+
+        Returns:
+            A dictionary which contains the residual of the PCA reduction with
+            the dict-key "PCA (#num_pca components)".
+        """
 
         _, residual_stack_fake = pca_psf_subtraction(
             images=stack_with_fake_planet,
@@ -41,15 +95,43 @@ class MultiComponentPCAPynPoint(DataReductionInterface):
 
     def __init__(
             self,
-            num_pcas,
-            scratch_dir,
-            num_cpus_pynpoint):
+            num_pcas: List[int],
+            scratch_dir: Path,
+            num_cpus_pynpoint: int = 1):
+        """
+        The MultiComponentPCAPynPoint is a wrapper around the full
+        frame PCA implemented in `PynPoint <https://pynpoint.readthedocs.io/en/\
+        latest/pynpoint.processing.html#pynpoint.processing.psfsubtraction.\
+        PcaPsfSubtractionModule>`__. While the wrapper
+        :meth:`~SimplePCAPynPoint` only accepts a single fixed number
+        of PCA components, MultiComponentPCAPynPoint computes several residuals
+        with different number of components. This can be more efficient as the
+        PCA basis needs to be computed only once. The disadvantage over
+        :meth:`~SimplePCAPynPoint` is that MultiComponentPCAPynPoint needs to
+        create a Pynpoint database and delete it after computing the residuals.
+
+
+        Args:
+            num_pcas: List of the number of PCA components to be used.
+            scratch_dir: A directory to store the Pynpoint database. Any
+                Pynpoint database created during the computation will be deleted
+                afterwards.
+            num_cpus_pynpoint: Number of CPU cores used by Pynpoint.
+        """
 
         self.num_pcas = num_pcas
         self.scratch_dir = scratch_dir
         self.num_cpus_pynpoint = num_cpus_pynpoint
 
-    def get_method_keys(self):
+    def get_method_keys(self) -> List[str]:
+        """
+        Get the method name "PCA (#num_pca components)".
+
+        Returns:
+            A list with strings "PCA (#num_pca components)" (one for each
+            value in num_pcas.
+
+        """
         keys = ["PCA (" + str(num_pcas).zfill(3) + " components)"
                 for num_pcas in self.num_pcas]
 
@@ -57,10 +139,31 @@ class MultiComponentPCAPynPoint(DataReductionInterface):
 
     def __call__(
             self,
-            stack_with_fake_planet,
-            parang_rad,
-            psf_template,
-            exp_id):
+            stack_with_fake_planet: np.ndarray,
+            parang_rad: np.ndarray,
+            psf_template: np.ndarray,
+            exp_id: str
+    ) -> Dict[str, np.ndarray]:
+        """
+        Compute the full-frame PCA for several numbers of PCA components.
+
+        Args:
+            stack_with_fake_planet: A 3d numpy array of the observation
+                sequence. Fake plants are inserted by applefy in advance.
+            parang_rad: A 1d numpy array containing the parallactic angles
+                in radians.
+            psf_template: A 2d numpy array with the psf-template
+                (usually the unsaturated star).
+            exp_id: Experiment ID of the config used to add the fake
+                planet. It is a unique string and can be used to store
+                intermediate results. See :meth:`~applefy.detections.\
+preparation.generate_fake_planet_experiments` for more information about the
+                config files.
+
+        Returns:
+            A dictionary which contains the residuals of the PCA reduction with
+            the dict-keys "PCA (#num_pca components)".
+        """
 
         pynpoint_dir = "tmp_pynpoint_" + exp_id
         pynpoint_dir = self.scratch_dir / pynpoint_dir

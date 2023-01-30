@@ -959,8 +959,8 @@ class DataReductionInterface(ABC):
         Args:
              stack_with_fake_planet: A 3d numpy array of the observation
                 sequence. Fake plants are inserted by applefy in advance.
-             parang_rad:
-                A 1d numpy array containing the parallactic angles in radians.
+             parang_rad: A 1d numpy array containing the parallactic angles
+                in radians.
              psf_template: A 2d numpy array with the psf-template
                 (usually the unsaturated star).
              exp_id: Experiment ID of the config used to add the fake
