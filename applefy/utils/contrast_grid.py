@@ -24,7 +24,7 @@ def _compute_median_confidence(
         fake_planet_positions: List[Tuple[float, float]],
         separation: float,
         flux_ratio: float,
-        test_statistic: TestInterface,
+        statistical_test: TestInterface,
         psf_fwhm_radius: float,
         photometry_mode_planet: AperturePhotometryMode,
         photometry_mode_noise: AperturePhotometryMode,
@@ -44,7 +44,7 @@ def _compute_median_confidence(
         tmp_median_p, _, _ = compute_detection_uncertainty(
             frame=tmp_fake_planet_residual,
             planet_position=tmp_planet_position,
-            statistical_test=test_statistic,
+            statistical_test=statistical_test,
             psf_fwhm_radius=psf_fwhm_radius,
             photometry_mode_planet=photometry_mode_planet,
             photometry_mode_noise=photometry_mode_noise,
