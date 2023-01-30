@@ -18,19 +18,21 @@ from applefy.detections.contrast import DataReductionInterface
 
 
 class SimplePCAPynPoint(DataReductionInterface):
+    """
+    The SimplePCAPynPoint is a wrapper around the simple full frame PCA
+    implemented in `PynPoint <https://pynpoint.readthedocs.io/en/latest/\
+    pynpoint.util.html#pynpoint.util.psf.pca_psf_subtraction>`__.
+    It only allows to compute the residuals for a fixed number of PCA
+    components. The advantage of this wrapper over
+    :meth:`~MultiComponentPCAPynPoint` is, that it does not require to
+    create a PynPoint database file.
+    """
 
     def __init__(
             self,
             num_pca: int):
         """
-        The SimplePCAPynPoint is a wrapper around the simple full frame PCA
-        implemented in `PynPoint <https://pynpoint.readthedocs.io/en/latest/\
-        pynpoint.util.html#pynpoint.util.psf.pca_psf_subtraction>`__.
-        It only allows to compute the residuals for a fixed number of PCA
-        components. The advantage of this wrapper over
-        :meth:`~MultiComponentPCAPynPoint` is, that it does not require to
-        create a PynPoint database file.
-
+        Constructor of the class.
 
         Args:
             num_pca: The number of PCA components to be used.
@@ -92,6 +94,18 @@ preparation.generate_fake_planet_experiments` for more information about the
 
 
 class MultiComponentPCAPynPoint(DataReductionInterface):
+    """
+    The MultiComponentPCAPynPoint is a wrapper around the full
+    frame PCA implemented in `PynPoint <https://pynpoint.readthedocs.io/en/\
+    latest/pynpoint.processing.html#pynpoint.processing.psfsubtraction.\
+    PcaPsfSubtractionModule>`__. While the wrapper
+    :meth:`~SimplePCAPynPoint` only accepts a single fixed number
+    of PCA components, MultiComponentPCAPynPoint computes several residuals
+    with different number of components. This can be more efficient as the
+    PCA basis needs to be computed only once. The disadvantage over
+    :meth:`~SimplePCAPynPoint` is that MultiComponentPCAPynPoint needs to
+    create a Pynpoint database and delete it after computing the residuals.
+    """
 
     def __init__(
             self,
@@ -99,17 +113,7 @@ class MultiComponentPCAPynPoint(DataReductionInterface):
             scratch_dir: Path,
             num_cpus_pynpoint: int = 1):
         """
-        The MultiComponentPCAPynPoint is a wrapper around the full
-        frame PCA implemented in `PynPoint <https://pynpoint.readthedocs.io/en/\
-        latest/pynpoint.processing.html#pynpoint.processing.psfsubtraction.\
-        PcaPsfSubtractionModule>`__. While the wrapper
-        :meth:`~SimplePCAPynPoint` only accepts a single fixed number
-        of PCA components, MultiComponentPCAPynPoint computes several residuals
-        with different number of components. This can be more efficient as the
-        PCA basis needs to be computed only once. The disadvantage over
-        :meth:`~SimplePCAPynPoint` is that MultiComponentPCAPynPoint needs to
-        create a Pynpoint database and delete it after computing the residuals.
-
+        Constructor of the class.
 
         Args:
             num_pcas: List of the number of PCA components to be used.

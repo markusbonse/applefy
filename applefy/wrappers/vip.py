@@ -14,17 +14,20 @@ from applefy.detections.contrast import DataReductionInterface
 
 
 class SimplePCAvip(DataReductionInterface):
+    """
+    The SimplePCAvip is a wrapper around the simple full frame PCA
+    implemented in `VIP <https://vip.readthedocs.io/en/latest/vip_hci.\
+    psfsub.html#vip_hci.psfsub.pca_fullfr.pca>`__.
+    It only allows to compute the residuals for a fixed number of PCA
+    components.
+    """
 
     def __init__(
             self,
             num_pca: int,
             kwarg: Optional[dict] = None):
         """
-        The SimplePCAvip is a wrapper around the simple full frame PCA
-        implemented in `VIP <https://vip.readthedocs.io/en/latest/vip_hci.\
-        psfsub.html#vip_hci.psfsub.pca_fullfr.pca>`__.
-        It only allows to compute the residuals for a fixed number of PCA
-        components.
+        Constructor of the class.
 
         Args:
             num_pca: The number of PCA components to be used.
@@ -92,18 +95,21 @@ preparation.generate_fake_planet_experiments` for more information about the
 
 
 class MultiComponentPCAvip(DataReductionInterface):
+    """
+    The MultiComponentPCAvip is a wrapper around the full
+    frame PCA implemented in `VIP <https://vip.readthedocs.io/en/latest/\
+    vip_hci.psfsub.html#vip_hci.psfsub.pca_fullfr.pca>`__. While the wrapper
+    :meth:`~SimplePCAvip` only accepts a single fixed number
+    of PCA components, MultiComponentPCAvip computes several residuals
+    with different number of components.
+    """
 
     def __init__(
             self,
             num_pcas_tuple: Tuple[int, int, int],
             kwarg: Optional[dict] = None):
         """
-        The MultiComponentPCAvip is a wrapper around the full
-        frame PCA implemented in `VIP <https://vip.readthedocs.io/en/latest/\
-        vip_hci.psfsub.html#vip_hci.psfsub.pca_fullfr.pca>`__. While the wrapper
-        :meth:`~SimplePCAvip` only accepts a single fixed number
-        of PCA components, MultiComponentPCAvip computes several residuals
-        with different number of components.
+        Constructor of the class.
 
         Args:
             num_pcas_tuple: A tuple which defines the range of components to be
