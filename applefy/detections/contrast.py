@@ -658,7 +658,7 @@ class Contrast:
         contrast_grids = dict()
 
         for key, tmp_result in self.contrast_results.items():
-            print("Computing contrast curve for " + str(key))
+            print("Computing contrast grid for " + str(key))
 
             tmp_contrast_grid, tmp_contrast_grid_curve = \
                 tmp_result.compute_contrast_grid(
@@ -668,6 +668,8 @@ class Contrast:
                     safety_margin=safety_margin,
                     confidence_level_fpf=confidence_level_fpf)
 
+            # Convert the separation index to FWHM
+            tmp_contrast_grid.columns = self._get_result_table_index()
             contrast_curves[key] = tmp_contrast_grid_curve["contrast"].values
             contrast_grids[key] = tmp_contrast_grid
 
