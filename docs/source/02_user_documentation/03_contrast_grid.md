@@ -1,3 +1,0 @@
-# Contrast Grids
-
-test page
