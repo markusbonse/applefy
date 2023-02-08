@@ -1,3 +1,0 @@
-# Contrast Curves
-
-test page

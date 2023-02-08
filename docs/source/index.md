@@ -17,7 +17,7 @@ It contains all the code for the following research paper (see also ):
 :caption: User Documentation
 
 02_user_documentation/01_detection_uncertainty
-02_user_documentation/02_contrast_curves
+02_user_documentation/02_contrast_curves.ipynb
 02_user_documentation/03_contrast_grid.ipynb
 ```
 
