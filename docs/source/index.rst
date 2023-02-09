@@ -61,8 +61,8 @@ contrast grid.
     :hidden:
     :caption: User Documentation
 
-    02_user_documentation/02_contrast_curves.ipynb
-    02_user_documentation/03_contrast_grid.ipynb
+    02_user_documentation/01_contrast_curves.ipynb
+    02_user_documentation/02_contrast_grid.ipynb
 
 .. toctree::
     :maxdepth: 3

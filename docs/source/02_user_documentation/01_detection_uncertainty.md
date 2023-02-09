@@ -1,3 +1,0 @@
-# Detection Uncertainty
-
-test page
