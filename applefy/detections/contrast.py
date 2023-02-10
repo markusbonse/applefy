@@ -207,8 +207,7 @@ class Contrast:
         calculate a
         `contrast curve <../02_user_documentation/01_contrast_curves.ipynb#Step-1:-Design-fake-planet-experiments>`_
         or
-        `contrast grid <../02_user_documentation/01_contrast_curves.ipynb#Step-1:-Design-fake-planet-experiments>`_
-        .
+        `contrast grid <../02_user_documentation/02_contrast_grid.ipynb>`_.
 
         Args:
             flux_ratios: A list / single value of planet-to-star
