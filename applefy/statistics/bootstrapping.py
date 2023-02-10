@@ -129,7 +129,6 @@ class BootstrapTest(TTest):
 
         # convert t and fpf lists to np.arrays
         lookups_new = dict()
-        # TODO change tau once we have a new table
         for key, values in json_lookups.items():
             tmp_dict = {"t": np.array(values["t"]),
                         "fpf": np.array(values["fpf"])}
