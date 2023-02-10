@@ -1,9 +1,8 @@
 """
 The contrast module is the main interface to compute contrast curves with
-applefy.
+applefy. For an example on how to use this module see the
+`user documentation <../02_user_documentation/01_contrast_curves.ipynb>`_
 """
-
-# TODO add link to an example
 
 from __future__ import annotations
 from typing import List, Dict, Optional, Union, Tuple, Any
@@ -35,11 +34,11 @@ from applefy.utils.contrast_grid import compute_contrast_grid, \
 
 
 class Contrast:
-    # TODO add link to an example
     """
     The Contrast class is the main interface to compute contrast curves with
     applefy. It allows to compute contrast grids as well as classical
-    analytical contrast curves.
+    analytical contrast curves. For an example on how to use this class see the
+    `user documentation <../02_user_documentation/01_contrast_curves.ipynb>`_
     """
 
     def __init__(
@@ -102,7 +101,6 @@ class Contrast:
         sub_folders = create_checkpoint_folders(self.checkpoint_dir)
         self.config_dir, self.residual_dir, self.scratch_dir = sub_folders
 
-        # TODO add auto mode
         self.psf_fwhm_radius = psf_fwhm_radius
 
         # Members which are created later
@@ -205,8 +203,12 @@ class Contrast:
         """
         Calculates the positions at which fake planets are inserted. For each
         fake planet experiment one .json config file is created (in case a
-        checkpoint_dir is available). **This function is the first step to
-        calculate a contrast curve or contrast grid**.
+        checkpoint_dir is available). This function is the first step to
+        calculate a
+        `contrast curve <../02_user_documentation/01_contrast_curves.ipynb#Step-1:-Design-fake-planet-experiments>`_
+        or
+        `contrast grid <../02_user_documentation/01_contrast_curves.ipynb#Step-1:-Design-fake-planet-experiments>`_
+        .
 
         Args:
             flux_ratios: A list / single value of planet-to-star
@@ -226,7 +228,6 @@ class Contrast:
                 files. The default behaviour will raise an error.
 
         """
-        # TODO add link to the notebook
 
         # 1. Calculate test positions for the fake planets
         # Take the first image of the science_sequence as a test_image
@@ -522,8 +523,10 @@ class Contrast:
             pixel_scale: Optional[float] = None
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Computes analytic contrast curves given a confidence level and a
-        statistical test (see [ref]). Analytic contrast curves are only
+        Computes
+        `analytic contrast curves <../02_user_documentation/01_contrast_curves.ipynb>`_
+        given a confidence level and a
+        statistical test. Analytic contrast curves are only
         applicable if used with linear post-processing techniques such as PCA.
         They can further lead to inaccurate results close to the star. For more
         advanced post-processing techniques use a contrast grid instead.
@@ -557,7 +560,6 @@ class Contrast:
             2. A pandas DataFrame with the MAD error of the contrast curves over
             all  num_rot_iter.
         """
-        # TODO add link to the paper / notebooks
 
         # 0.) Check if prepare_contrast_results was executed before
         if self.contrast_results is None:
@@ -605,9 +607,11 @@ class Contrast:
             pixel_scale: Optional[float] = None
     ) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """
-        Calculates the contrast grids as shown in [ref]. A contrast grid shows
-        the detection uncertainty as a function of separation from the star and
-        fake planet flux_ratio. It evaluates the fake planet residuals directly.
+        Calculates the
+        `contrast grids <../02_user_documentation/02_contrast_grid.ipynb>`_.
+        A contrast grid shows the detection uncertainty as a function of
+        separation from the star and fake planet flux_ratio. It evaluates the
+        fake planet residuals directly.
 
         Requires a previous execution of :meth:`~prepare_contrast_results`.
         If the post-processing method used in
@@ -645,7 +649,6 @@ class Contrast:
             post-processing routine. We report the median
             p-value over all num_rot_iter experiments performed.
         """
-        # TODO add link to the paper / notebook
 
         # 0.) Check if prepare_contrast_results was executed before
         if self.contrast_results is None:
@@ -787,9 +790,11 @@ class ContrastResult:
             num_rot_iter: int = 100
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Computes an analytic contrast curve given a confidence level and a
-        statistical test (see [ref]). Analytic contrast curves are only
-        applicable if used with linear post-processing techniques such as PCA.
+        Computes an
+        `analytic contrast curve <../02_user_documentation/01_contrast_curves.ipynb>`_
+        given a confidence level and a statistical test.
+        Analytic contrast curves are only applicable if used with linear
+        post-processing techniques such as PCA.
         They can further lead to inaccurate results close to the star. For more
         advanced post-processing techniques use a contrast grid instead.
 
@@ -817,7 +822,6 @@ class ContrastResult:
             2. A pandas DataFrame with the MAD error of the contrast curve over
             all  num_rot_iter.
         """
-        # TODO add link to the paper / notebooks
 
         if self.median_throughput_table is None:
             self.compute_throughput()
@@ -855,9 +859,11 @@ class ContrastResult:
             confidence_level_fpf: Optional[float] = None
     ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         """
-        Calculates the contrast grid as shown in [ref]. The contrast grid shows
-        the detection uncertainty as a function of separation from the star and
-        fake planet flux_ratio. It evaluates the fake planet residuals directly.
+        Calculates the
+        `contrast grid  <../02_user_documentation/02_contrast_grid.ipynb>`_ .
+        The contrast grid shows the detection uncertainty as a function of
+        separation from the star and fake planet flux_ratio. It evaluates the
+        fake planet residuals directly.
         Compared to the function :meth:`~compute_analytic_contrast_curve` this
         function is applicable not only to residuals of linear PSF-subtraction
         methods like PCA, but in general.

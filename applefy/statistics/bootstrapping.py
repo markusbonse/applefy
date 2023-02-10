@@ -489,10 +489,10 @@ class LaplaceBootstrapTest(BootstrapTest):
     The LaplaceBootstrapTest is a parametric hypothesis test which assumes that
     the distribution of the noise is Laplace. The test accounts for the higher
     occurrence rate of bright noise values as well as for the small sample size
-    at close separations to the star. Applefy comes with previously computed
-    lookup tables (See [ref]).
+    at close separations to the star. Applefy comes with
+    `previously computed <../02_user_documentation/03_bootstrapping.ipynb>`_
+    lookup tables.
     """
-    # TODO add link to lookup tables
 
     def __init__(
             self,
