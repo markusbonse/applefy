@@ -11,6 +11,8 @@ We have done our best to follow best practices for software development and
 document all important steps. However, the code is still experimental.
 If you encounter any difficulties, don't hesitate to contact us for assistance.
 
+Please read the section about `Citation <05_citation.rst>`_ if you use applefy.
+
 Contrast Curves
 ---------------
 Applefy provides a number of features and functionalities to improve the accuracy
