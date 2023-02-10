@@ -494,6 +494,29 @@ class LaplaceBootstrapTest(BootstrapTest):
     """
     # TODO add link to lookup tables
 
+    def __init__(
+            self,
+            noise_observations: Union[List[float], np.ndarray, None] = None,
+            num_cpus: int = 1):
+        """
+        Constructor of a LaplaceBootstrapTest.
+
+        Args:
+            noise_observations: Noise observations which are used to run the
+                bootstrap experiments. The LaplaceBootstrapTest benefits from
+                pivoting. Hence, noise_observations will have no effect on the
+                result.
+
+            num_cpus: The number of CPU cores that will be used in all tests
+                (e.g. to run the bootstrapping).
+        """
+
+        if noise_observations is None:
+            noise_observations = np.random.laplace(0, 1, 6)
+
+        super().__init__(noise_observations, num_cpus)
+
+
     def _sample_t(
             self,
             observation_list_idx,
