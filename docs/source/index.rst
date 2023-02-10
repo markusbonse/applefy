@@ -91,4 +91,3 @@ contrast grid.
     :caption: About
 
     05_citation
-    06_contact
