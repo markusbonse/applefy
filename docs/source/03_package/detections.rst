@@ -1,5 +1,6 @@
 Detections
 ==========
+Functions and interfaces to compute contrast curves and contrast grids.
 
 Contrast
 --------

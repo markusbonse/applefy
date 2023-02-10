@@ -1,5 +1,7 @@
 Statistics
 ===========
+Different statistical test which can be used to calculate contrast curves and
+contrast grids.
 
 Parametric
 ----------

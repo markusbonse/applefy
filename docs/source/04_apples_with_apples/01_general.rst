@@ -1,5 +1,11 @@
 Apples with Apples
 ====================
+This is the code used to create the plots of the **Apples with Apples** paper
+`(Bonse et al. 2023) <../05_citation.rst>`_. In order to reproduce our results
+please `download <02_paper_data.rst>`_ the required data from Zenodo.
+
+
+
 .. toctree::
    :hidden:
 
