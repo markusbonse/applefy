@@ -47,7 +47,7 @@ setup(
                 "jupyter_contrib_nbextensions",
                 "sphinx-autodoc-typehints"],
         "fast_sort": ["parallel_sort==0.0.3", ],
-        "plotting": ["seaborn", "matplotlib"],
+        "plotting": ["seaborn", "matplotlib", "bokeh>=3.0.3"],
     },
     packages=["applefy"],
     zip_safe=False,
