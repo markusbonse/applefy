@@ -38,7 +38,7 @@ setup(
         "astropy>=4.3",
         "pandas>=1.3",
         "photutils>=1.3",
-        "numba>=0.55.0",
+        "numba>=0.54.0",
         "scikit-learn>=1.0",
         "scipy>=1.7",
         "tqdm>=4.64.0",
