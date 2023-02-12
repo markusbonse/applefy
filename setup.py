@@ -34,9 +34,9 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[
+        "numpy>=1.20",
         "astropy",
-        "numpy",
-        "pandas",
+        "pandas~=1.4",
         "photutils>=1.3",
         "numba",
         "scikit-learn",
