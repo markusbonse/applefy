@@ -53,6 +53,8 @@ setup(
                 "sphinx-copybutton",
                 "sphinx-gallery<=0.10",
                 "twine",
+                "pynpoint",
+                "vip_hci",
                 # needed for syntax highlighting in jupyter notebooks
                 "IPython",
                 # spell checking in jupyter notebooks
