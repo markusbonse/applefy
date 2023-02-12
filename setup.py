@@ -45,7 +45,7 @@ setup(
         "h5py",
         "ipywidgets"],
     extras_require={
-        "dev": ["setuptools >= 65.4.1",
+        "dev": ["pkg_resources",
                 "pynpoint",
                 "furo",
                 "sphinx_rtd_theme==1.1.1",
