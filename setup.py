@@ -46,6 +46,7 @@ setup(
         "ipywidgets"],
     extras_require={
         "dev": ["furo",
+                "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1",
                 "myst-parser",
                 "nbsphinx",
