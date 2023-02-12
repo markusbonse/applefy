@@ -17,7 +17,7 @@ Contrast Curves
 ---------------
 Applefy provides a number of features and functionalities to improve the accuracy
 and robustness of contrast curve calculations. Here is an example of some
-`contrast curves <02_user_documentation/02_contrast_curves.ipynb>`_ calculated with applefy using the
+`contrast curves <02_user_documentation/01_contrast_curves.ipynb>`_ calculated with applefy using the
 t-test discussed in `Mawet et al. 2014 <https://arxiv.org/abs/1407.2247>`_.
 
 .. image:: _static/Contrast_curve.png
@@ -41,7 +41,7 @@ Contrast Grids
 --------------
 
 Another key feature of the package is the option to compute
-`contrast grids <02_user_documentation/03_contrast_grid.ipynb>`_:
+`contrast grids <02_user_documentation/02_contrast_grid.ipynb>`_:
 A new way to explore which planets are detectable given their planet-star 
 flux ratio and separation from the star. Here is an example of an interactive
 contrast grid.
