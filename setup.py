@@ -42,7 +42,7 @@ setup(
         "scikit-learn>=1.0",
         "scipy>=1.7",
         "tqdm>=4.64.0",
-        "h5py>=3.6.0"],
+        "h5py>=3.1.0"],
     extras_require={
         "dev": ["vip_hci>=1.3",
                 #'pynpoint @ git+https://github.com/markusbonse/PynPoint.git#egg=pynpoint-0.10.1',
