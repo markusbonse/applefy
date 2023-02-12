@@ -46,7 +46,7 @@ setup(
     extras_require={
         "dev": ["vip_hci>=1.3",
                 #'pynpoint @ git+https://github.com/markusbonse/PynPoint.git#egg=pynpoint-0.10.1',
-                "pynpoint==0.10.1",
+                "pynpoint==0.10.0",
                 "furo",
                 "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1",
