@@ -45,7 +45,7 @@ setup(
         "h5py",
         "ipywidgets"],
     extras_require={
-        "dev": ["pynpoint==0.10.1",
+        "dev": ['pynpoint @ git+ssh://git@github.com:markusbonse/PynPoint.git#egg=pynpoint-0.10.1',
                 "furo",
                 "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1",
@@ -63,10 +63,6 @@ setup(
         "fast_sort": ["parallel_sort==0.0.3", ],
         "plotting": ["seaborn", "matplotlib", "bokeh>=3.0.3"],
     },
-    dependency_links=[
-        # Make sure to include the `#egg` portion so the `install_requires` recognizes the package
-        'git+ssh://git@github.com:markusbonse/PynPoint.git#egg=pynpoint-0.10.1'
-    ],
     packages=find_packages(include=['applefy',
                                     'applefy.*']),
     zip_safe=False,
