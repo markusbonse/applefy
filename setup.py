@@ -45,7 +45,9 @@ setup(
         "h5py",
         "ipywidgets"],
     extras_require={
-        "dev": ['pynpoint @ git+https://github.com/markusbonse/PynPoint.git#egg=pynpoint-0.10.1',
+        "dev": ["vip_hci>=1.3",
+                #'pynpoint @ git+https://github.com/markusbonse/PynPoint.git#egg=pynpoint-0.10.1',
+                "pynpoint==0.10.1",
                 "furo",
                 "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1",
@@ -54,7 +56,6 @@ setup(
                 "sphinx-copybutton",
                 "sphinx-gallery<=0.10",
                 "twine",
-                "vip_hci",
                 # needed for syntax highlighting in jupyter notebooks
                 "IPython",
                 # spell checking in jupyter notebooks
