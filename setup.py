@@ -45,7 +45,8 @@ setup(
         "h5py",
         "ipywidgets"],
     extras_require={
-        "dev": ["furo",
+        "dev": ["pynpoint",
+                "furo",
                 "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1",
                 "myst-parser",
@@ -53,7 +54,6 @@ setup(
                 "sphinx-copybutton",
                 "sphinx-gallery<=0.10",
                 "twine",
-                "pynpoint",
                 "vip_hci",
                 # needed for syntax highlighting in jupyter notebooks
                 "IPython",
