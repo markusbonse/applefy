@@ -65,7 +65,7 @@ setup(
         "fast_sort": ["parallel_sort==0.0.3", ],
         "plotting": ["seaborn",
                      "matplotlib",
-                     "bokeh~=2.4.0"],
+                     "bokeh"],
     },
     packages=find_packages(include=['applefy',
                                     'applefy.*']),
