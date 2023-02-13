@@ -7,14 +7,15 @@ The code was written for **Python 3.8 and above**
 
 ## Installation
 
-The code of `applefy` is available on the **PyPI repository** as well as on 
+The code of `applefy` is available on the [PyPI repository](https://pypi.org/project/applefy/)
+as well as on 
 [GitHub](https://github.com/markusbonse/applefy). We *strongly* recommend you 
 to use a [virtual environment](https://virtualenv.pypa.io/en/latest/) to install
 the package.
 
 ```{attention} 
 Applefy can only be used together with a data post-processing libary
-for high-contrast imaging data! The follwing packages are currently 
+for high-contrast imaging data! The following packages are currently 
 supported:
 
 1. [PynPoint](https://pynpoint.readthedocs.io/en/latest/installation.html)
