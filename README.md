@@ -28,9 +28,9 @@ can be found [on ReadTheDocs](https://applefy.readthedocs.io).
 
 This short guide will walk you through the required steps to set up and install
 `applefy`.
-```{attention} 
+
 The code was written for **Python 3.8 and above**
-``` 
+ 
 
 ## Installation
 
@@ -121,7 +121,8 @@ residuals.
 LaplaceBootstrapTest.
 
 ## Reproduce our results
-Check out the [plot gallery]() in the ``applefy`` documentation.
+Check out the [plot gallery](https://applefy.readthedocs.io/en/latest/04_apples_with_apples/01_general.html)
+in the ``applefy`` documentation.
 
 ## Authors
 All code was written by Markus J. Bonse, with additional contributions from 
