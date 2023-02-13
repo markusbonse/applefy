@@ -62,7 +62,7 @@ setup(
                 "ipywidgets",
                 # spell checking in jupyter notebooks
                 "jupyter_contrib_nbextensions",
-                "sphinx-autodoc-typehints"],
+                "sphinx-autodoc-typehints>1.6"],
         "fast_sort": ["parallel_sort==0.0.3", ],
         "plotting": ["seaborn",
                      "matplotlib",
