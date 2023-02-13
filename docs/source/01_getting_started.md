@@ -10,7 +10,7 @@ The code was written for **Python 3.8 and above**
 The code of `applefy` is available on the **PyPI repository** as well as on 
 [GitHub](https://github.com/markusbonse/applefy). We *strongly* recommend you 
 to use a [virtual environment](https://virtualenv.pypa.io/en/latest/) to install
-tha package.
+the package.
 
 ```{attention} 
 Applefy can only be used together with a data post-processing libary
@@ -62,7 +62,7 @@ pip install "applefy[option1,option2,...]"
 ```
 
 The following options are available:
-1. `dev`: Add all dependencies needed to build this documentation page with
+1. `dev`: Adds all dependencies needed to build this documentation page with
 [sphinx](https://www.sphinx-doc.org/en/master/).
 2. `fast_sort`: Installs the library 
 [parallel_sort](https://pypi.org/project/parallel-sort/) which can speed up the
