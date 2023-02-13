@@ -41,8 +41,6 @@ extensions = ['sphinx.ext.napoleon',
               'sphinx_autodoc_typehints',
               'sphinx.ext.intersphinx']
 
-html_extra_path = ["_static/google20491b243e6d8048.html"]
-
 # Gallery style
 sphinx_gallery_conf = {
     'thumbnail_size': (50, 50)
