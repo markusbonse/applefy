@@ -47,7 +47,7 @@ setup(
     extras_require={
         "pynpoint": [
             "pynpoint @ git+https://github.com/markusbonse/PynPoint.git#egg=pynpoint-0.10.1",
-            #"pynpoint>=0.10.0"
+            "pynpoint>=0.10.1",
         ],
         "vip": [
             "vip_hci>=1.3",
