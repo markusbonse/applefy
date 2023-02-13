@@ -78,6 +78,7 @@ which we use in our plots.
 option `pynpoint`.
 5. `pynpoint`: Installs applefy with PynPoint using the PynPoint version 
 available on GitHub. Note, this option is conflicting with the option `vip`.
+This option is only available if you install `applefy` from GitHub.
 
 ## Demonstration dataset
 The tutorials in the 
