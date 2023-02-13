@@ -40,7 +40,7 @@ setup(
         "pandas>=1.5",
         "photutils>=1.3.0",
         "numba>=0.54",
-        "scikit-learn>=1.0 < 2.0",
+        "scikit-learn>=1.0<2.0",
         "scipy>=1.8.0",
         "tqdm>=4.62.3",
         "h5py>=3.6"],
