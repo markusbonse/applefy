@@ -52,6 +52,8 @@ autodoc_member_order = 'bysource'
 autodoc_default_options = {
     "members": True, "undoc-members": True, "show-inheritance": True}
 
+autodoc_mock_imports = ["vip", "pynpoint"]
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "packaging": ("https://packaging.pypa.io/en/latest", None),
