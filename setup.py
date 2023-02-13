@@ -59,6 +59,7 @@ setup(
                 "twine",
                 # needed for syntax highlighting in jupyter notebooks
                 "IPython",
+                "ipywidgets",
                 # spell checking in jupyter notebooks
                 "jupyter_contrib_nbextensions",
                 "sphinx-autodoc-typehints"],
