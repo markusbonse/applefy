@@ -45,14 +45,16 @@ setup(
         "tqdm>=4.62.3",
         "h5py>=3.6"],
     extras_require={
+        "pynpoint": [
+            'pynpoint @ git+https://github.com/markusbonse/PynPoint.git#egg=pynpoint-0.10.1'],
         "vip": [
             "vip_hci>=1.3"],
         "dev": ["furo>=2022.12.7",
                 "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1",
-                "myst-parser>0.18.1 < 1.0",
-                "nbsphinx >= 0.8.9",
-                "sphinx-copybutton >= 0.5.1",
+                "myst-parser>0.18.1<1.0",
+                "nbsphinx>=0.8.9",
+                "sphinx-copybutton>=0.5.1",
                 "sphinx-gallery<=0.10",
                 "twine",
                 # needed for syntax highlighting in jupyter notebooks
@@ -61,8 +63,8 @@ setup(
                 "jupyter_contrib_nbextensions",
                 "sphinx-autodoc-typehints"],
         "fast_sort": ["parallel_sort==0.0.3", ],
-        "plotting": ["seaborn >= 0.12.1",
-                     "matplotlib >= 3.4.3",
+        "plotting": ["seaborn>=0.12.1",
+                     "matplotlib>=3.4.3",
                      "bokeh>=3.0.3"],
     },
     packages=find_packages(include=['applefy',
