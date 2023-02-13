@@ -67,11 +67,16 @@ The following options are available:
 2. `fast_sort`: Installs the library 
 [parallel_sort](https://pypi.org/project/parallel-sort/) which can speed up the
 calculation of 
-[bootstrap experiments](02_user_documentation/03_bootstrapping.ipynb).
+[bootstrap experiments](02_user_documentation/03_bootstrapping.ipynb). Since,
+parallel_sort is a wrapper around the GNU library it is only supported on Linux.
 3. `plotting`: Installs the libraries [seaborn](https://seaborn.pydata.org), 
 [matplotlib](https://matplotlib.org) and 
 [bokeh](https://docs.bokeh.org/en/latest/)
 which we use in our plots. 
+4. `vip`: Installs applefy with VIP. Note, this option is conflicting with the 
+option `pynpoint`.
+5. `pynpoint`: Installs applefy with PynPoint using the PynPoint version 
+available on GitHub. Note, this option is conflicting with the option `vip`.
 
 ## Demonstration dataset
 The tutorials in the 
