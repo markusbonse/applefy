@@ -91,8 +91,8 @@ html_static_path = ['_static',]
 # Setups for furo theme
 html_theme_options = {
     #"announcement": "<em>Important</em> announcement!",
-    "light_logo": "applefy_logo.pdf",
-    "dark_logo": "applefy_logo.pdf",
+    "light_logo": "applefy_logo.svg",
+    "dark_logo": "applefy_logo.svg",
     "sidebar_hide_name": True,
     "light_css_variables": {
         "color-brand-primary": "#4e4c4d",
