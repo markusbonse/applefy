@@ -52,9 +52,9 @@ setup(
         "dev": ["furo>=2022.12.7",
                 "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1,<6",
-                "myst-parser>0.18.1,<1.0",
+                "myst-parser",
                 "nbsphinx>=0.8.9",
-                "sphinx-copybutton>=0.5.1",
+                "sphinx-copybutton",
                 "sphinx-gallery<=0.10",
                 "twine",
                 # needed for syntax highlighting in jupyter notebooks
