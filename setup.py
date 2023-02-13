@@ -46,12 +46,9 @@ setup(
         "h5py>=3.6"],
     extras_require={
         "pynpoint": [
-            "pynpoint @ git+https://github.com/markusbonse/PynPoint.git#egg=pynpoint-0.10.1",
-            "pynpoint>=0.10.1",
-        ],
+            'pynpoint @ git+https://github.com/markusbonse/PynPoint.git#egg=pynpoint-0.10.1'],
         "vip": [
-            "vip_hci>=1.3",
-        ],
+            "vip_hci>=1.3"],
         "dev": ["furo>=2022.12.7",
                 "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1",
