@@ -64,7 +64,7 @@ setup(
                 "jupyter_contrib_nbextensions~=0.7.0",
                 "sphinx-autodoc-typehints>1.6"],
         "fast_sort": ["parallel_sort==0.0.3", ],
-        "plotting": ["seaborn~=0.12.1,",
+        "plotting": ["seaborn~=0.12.1",
                      "matplotlib>=3.4.3",
                      "bokeh>=3.0.3"],
     },
