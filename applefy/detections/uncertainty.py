@@ -28,7 +28,7 @@ def compute_detection_uncertainty(
     a given position in a residual is not noise. The function supports
     several `tests <statistics.html>`_ and accounts for the effect of where the
     noise is extracted from the residual (see
-    `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_)
+    `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_)
 
     Args:
         frame: The residual on which we want to estimate the detection
@@ -54,7 +54,7 @@ def compute_detection_uncertainty(
             defines how the noise photometry is measured.
         num_rot_iter: Number of tests performed with different positions of
             the noise values. See
-            `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+            `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
             for more information.
         safety_margin: Area around the planet [pixel] which is excluded from
             the noise. This can be useful in case the planet has negative wings.

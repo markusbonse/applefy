@@ -14,15 +14,15 @@ please `download <02_paper_data.rst>`_ the required data from Zenodo.
 .. nbgallery::
 
    paper_experiments/01_What_is_a_detection.ipynb
-   paper_experiments/02_Rotation.ipynb
-   paper_experiments/03_Independence.ipynb
-   paper_experiments/04_Residual_noise_statistics.ipynb
-   paper_experiments/05_Parametric_BS_Procedure.ipynb
-   paper_experiments/06_Convergence_distributions.ipynb
-   paper_experiments/07_Contrast_Grid.ipynb
-   paper_experiments/08_Monte_Carlo_Simulations_PB_Laplace.ipynb
-   paper_experiments/09_required_SNR.ipynb
-   paper_experiments/10_contrast_curves_compared
+   paper_experiments/02_Independence.ipynb
+   paper_experiments/03_Residual_noise_statistics.ipynb
+   paper_experiments/04_Parametric_BS_Procedure.ipynb
+   paper_experiments/05_Convergence_distributions.ipynb
+   paper_experiments/06_Contrast_Grid.ipynb
+   paper_experiments/07_Monte_Carlo_Simulations_PB_Laplace.ipynb
+   paper_experiments/08_required_SNR.ipynb
+   paper_experiments/09_contrast_curves_compared
+   paper_experiments/10_Rotation.ipynb
    paper_experiments/11_Fake_planet_residuals.ipynb
    paper_experiments/12_Throughput.ipynb
    paper_experiments/13_Contrast_Grid_vs_Contrast_Curve.ipynb

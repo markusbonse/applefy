@@ -187,7 +187,7 @@ def test_normality_shapiro_wilk(
             diameter of the PSF FWHM in pixel.
         num_rot_iter: Number of different noise positions at which the
             Shapiro-Wilk test is evaluated. See
-            `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+            `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
             for more information.
         photometry_mode: An instance of AperturePhotometryMode which defines
             how the noise photometry is measured.

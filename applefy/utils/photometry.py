@@ -301,7 +301,7 @@ class IterNoise(ABC):
                 [pixel].
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+                `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
                 for more information.
             photometry_mode: An instance of AperturePhotometryMode which defines
                 how the flux is measured at the calculated position.
@@ -386,7 +386,7 @@ class IterNoiseBySeparation(IterNoise):
     An iterator that allows to sample noise photometry for different reference
     positions (angle_offsets). This is needed to average out the effect of
     rotation on the contrast. See
-    `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+    `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
     for more information.
     """
 
@@ -448,7 +448,7 @@ class IterNoiseForPlanet(IterNoise):
     An iterator that allows to sample noise photometry for different reference
     positions relative to a given planet position. This is needed to average out
     the effect of rotation on the detection uncertainty. See
-    `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+    `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
     for more information.
     """
 

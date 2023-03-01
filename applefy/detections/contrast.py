@@ -547,7 +547,7 @@ class Contrast:
                 contrast curve as false-positive fraction (FPF).
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+                `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
                 for more information.
             pixel_scale: The pixel scale in arcsec. If given the result table
                 will have a multi index.
@@ -634,7 +634,7 @@ class Contrast:
                 wings.
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+                `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
                 for more information.
             pixel_scale: The pixel scale in arcsec. If given the result table
                 will have a multi index.
@@ -811,7 +811,7 @@ class ContrastResult:
                 in the fake planet experiments).
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+                `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
                 for more information.
 
         Returns:
@@ -879,7 +879,7 @@ class ContrastResult:
             num_cores: Number of parallel jobs used during multiprocessing.
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
-                `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_
+                `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
                 for more information.
             safety_margin: Area around the planet [pixel] which is excluded from
                 the noise. This can be useful in case the planet has negative
