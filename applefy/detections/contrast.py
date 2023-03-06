@@ -60,8 +60,11 @@ class Contrast:
         Args:
             science_sequence: A 3d numpy array of the observation
                 sequence without any fake planets.
+                Dimensions (time, x, y). dim(x) == dim (y). We recommend an
+                add pixel resolution!
             psf_template: A 2d numpy array with the psf-template
-                (usually the unsaturated star).
+                (usually the unsaturated star). We recommend an add pixel
+                resolution!
             psf_fwhm_radius: The FWHM (radius) of the PSF. It is needed to
                 sample independent noise values i.e. it determines the
                 spacing between the noise observations which are extracted
@@ -88,7 +91,35 @@ class Contrast:
                     3. scratch: A scratch folder which can be used by the
                     post-processing algorithm to store files.
         """
+        # 1.) do some checks if the data is in a reasonable shape
+        # Are the dimensions correct?
+        if len(psf_template.shape) != 2:
+            raise ValueError("psf_template needs to be a 2d numpy array. "
+                             "Only exactly two dimensions are supported!")
 
+        if psf_template.shape[0] != psf_template.shape[1]:
+            raise ValueError("The size of the psf_template has to be square."
+                             "I.e. dim(x) == dim(y)")
+
+        if len(science_sequence.shape) != 3:
+            raise ValueError("science_sequence needs to be a 3d numpy array. "
+                             "Only exactly three dimensions are supported!")
+
+        if science_sequence.shape[1] != science_sequence.shape[2]:
+            raise ValueError("The size of the science_sequence has to be "
+                             "square. I.e. dim(x) == dim(y)")
+
+        # psf_template and science_sequence have to be either both odd or both
+        # even in size
+        if not (science_sequence.shape[1] % 2 == 0) == \
+               (psf_template.shape[0] % 2 == 0):
+            raise ValueError("The image resolution of science_sequence and"
+                             " psf_template have to be either both odd "
+                             " or both even. Mixtures e.g. even psf_template "
+                             " with odd science_sequence are currently not "
+                             "supported.")
+
+        # 2.) save the data internally
         self.science_sequence = science_sequence
         self.psf_template = psf_template
         self.parang_rad = parang_rad

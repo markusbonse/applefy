@@ -19,7 +19,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="applefy",
-    version="0.1.0",
+    version="0.1.1",
     description=(
         "applefy: A library to compute detection limits for high contrast"
         " imaging of exoplanets"
