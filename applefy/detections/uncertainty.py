@@ -75,7 +75,7 @@ def compute_detection_uncertainty(
 
     # 2.) estimate the planet flux
     planet_photometry = get_flux(frame=frame,
-                                 position=planet_position,
+                                 position=planet_position[:2],
                                  photometry_mode=photometry_mode_planet)[1]
 
     # 3.) Iterate over the noise
