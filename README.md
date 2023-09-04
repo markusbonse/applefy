@@ -9,16 +9,15 @@ detection limits for exoplanet high contrast imaging (HCI) datasets.
 and robustness of contrast curve calculations. It implements the classical 
 approach based on the t-test (compare 
 [Mawet et al. 2014](https://arxiv.org/abs/1407.2247>)) as well as the parametric
-boostrap test for non-Gaussian residual noise (Bonse et al. subm.).
+boostrap test for non-Gaussian residual noise ([Bonse et al. 2023](https://ui.adsabs.harvard.edu/search/p_=0&q=%20%20author%3A%22%5EBonse%2C%20Markus%22%20year%3A2023&sort=date%20desc%2C%20bibcode%20desc)).
 
-Applefy has two main feature:
+Applefy has two main features:
 
 1. Compute contrast curves (see [documentation](https://applefy.readthedocs.io/en/latest/02_user_documentation/01_contrast_curves.html))
 2. Compute contrast grids (see [documentation](https://applefy.readthedocs.io/en/latest/02_user_documentation/02_contrast_grid.html))
 
 Further, this repository contains the code needed to reproduce the results of 
-our paper:
-> COMING SOON
+our paper, available [here](https://arxiv.org/abs/2303.12030).
 
 ---
 
@@ -40,7 +39,7 @@ as well as on
 to use a [virtual environment](https://virtualenv.pypa.io/en/latest/) to install
 the package.
 
-Applefy can only be used together with a data post-processing libary
+Applefy can only be used together with a data post-processing library
 for high-contrast imaging data! The following packages are currently 
 supported:
 
