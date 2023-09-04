@@ -1,0 +1,33 @@
+# macOS stuff
+.DS_Store
+
+# optimized python files
+*.py[cod]
+_pycache__/
+
+# distribution / packaging
+build
+dist
+*.egg-info
+
+# documentation / sphinx
+docs/build
+docs/time
+
+# editors / IDEs
+.idea/
+*.sublime-project
+*.sublime-cache
+*.sublime-workspace
+.pydevproject
+.settings
+.project
+.vscode/
+justfile
+
+# jupyter notebooks
+*.ipynb_checkpoints
+
+# scripts
+_pypi.sh
+_sphinx.sh
