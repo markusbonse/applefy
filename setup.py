@@ -48,7 +48,7 @@ setup(
         "pynpoint": [
             'pynpoint @ git+https://github.com/PynPoint/PynPoint.git#egg=pynpoint-0.10.0'],
         "vip": [
-            "vip_hci>=1.3"],
+            "vip_hci>=1.5.2"],
         "dev": ["furo>=2022.12.7",
                 "sphinx_rtd_theme==1.1.1",
                 "sphinx>=2.1,<6",
