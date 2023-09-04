@@ -1,22 +1,31 @@
 Citation
 ========
 
-If you use **applfy** for your work please cite our paper.
-**The paper is accepted for publication and will be published soon.**
-For now you can use the following BibTeX entry:
+If you use **applefy** for your work please cite our paper:
 
 .. code-block:: bibtex
 
     @article{bonse2023comparing,
-      title={{Comparing Apples with Apples: Robust Detection Limits for Exoplanet High-Contrast Imaging in the Presence of non-Gaussian Noise}},
-      author={Markus J. Bonse and Emily O. Garvin and Timothy D. Gebhard and Felix A. Dannert and Faustine Cantalloube and Gabriele Cugno and Olivier Absil and Jean Hayoz and Julien Milli and Markus Kasper and Sascha P. Quanz},
-      journal={arXiv preprint arXiv:2303.12030},
-      year={2023}
+       author = {{Bonse}, Markus J. and {Garvin}, Emily O. and {Gebhard}, Timothy D. and {Dannert}, Felix A. and {Cantalloube}, Faustine and {Cugno}, Gabriele and {Absil}, Olivier and {Hayoz}, Jean and {Milli}, Julien and {Kasper}, Markus and {Quanz}, Sascha P.},
+        title = "{Comparing Apples with Apples: Robust Detection Limits for Exoplanet High-contrast Imaging in the Presence of Non-Gaussian Noise}",
+      journal = {\aj},
+     keywords = {Astrostatistics, Bootstrap, Direct imaging, High angular resolution, 1882, 1906, 387, 2167, Astrophysics - Earth and Planetary Astrophysics, Astrophysics - Instrumentation and Methods for Astrophysics},
+         year = 2023,
+        month = aug,
+       volume = {166},
+       number = {2},
+          eid = {71},
+        pages = {71},
+          doi = {10.3847/1538-3881/acc93c},
+archivePrefix = {arXiv},
+       eprint = {2303.12030},
+ primaryClass = {astro-ph.EP},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2023AJ....166...71B}
     }
 
 Alternatively, the APA-style citation is:
 
-    Bonse, M. J., Garvin, E. O., Gebhard, T. D., Dannert, F. A., Cantalloube, F., Cugno, G., ... & Quanz, S. P. (2023). Comparing Apples with Apples: Robust Detection Limits for Exoplanet High-Contrast Imaging in the Presence of non-Gaussian Noise. arXiv preprint arXiv:2303.12030.
+    Bonse, M. J., Garvin, E. O., Gebhard, T. D., Dannert, F. A., Cantalloube, F., Cugno, G., ... & Quanz, S. P. (2023). Comparing Apples with Apples: Robust Detection Limits for Exoplanet High-Contrast Imaging in the Presence of non-Gaussian Noise. The Astronomical Journal 166, 71, arXiv preprint arXiv:2303.12030.
 
 
 
