@@ -1,7 +1,7 @@
 Citation
 ========
 
-If you use **applefy** for your work please cite our paper:
+If you use **applefy** for your work please cite `our paper <https://ui.adsabs.harvard.edu/abs/2023AJ....166...71B/abstract>`_:
 
 .. code-block:: bibtex
 

@@ -9,7 +9,7 @@ detection limits for exoplanet high contrast imaging (HCI) datasets.
 and robustness of contrast curve calculations. It implements the classical 
 approach based on the t-test (compare 
 [Mawet et al. 2014](https://arxiv.org/abs/1407.2247>)) as well as the parametric
-boostrap test for non-Gaussian residual noise ([Bonse et al. 2023](https://ui.adsabs.harvard.edu/search/p_=0&q=%20%20author%3A%22%5EBonse%2C%20Markus%22%20year%3A2023&sort=date%20desc%2C%20bibcode%20desc)).
+boostrap test for non-Gaussian residual noise ([Bonse et al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....166...71B/abstract).
 
 Applefy has two main features:
 
