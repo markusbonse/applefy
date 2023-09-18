@@ -17,7 +17,7 @@ Applefy has two main features:
 2. Compute contrast grids (see [documentation](https://applefy.readthedocs.io/en/latest/02_user_documentation/02_contrast_grid.html))
 
 Further, this repository contains the code needed to reproduce the results of 
-our paper, available [here](https://arxiv.org/abs/2303.12030).
+our paper, available [here](https://iopscience.iop.org/article/10.3847/1538-3881/acc93c/meta).
 
 ---
 
@@ -124,6 +124,6 @@ LaplaceBootstrapTest.
 Check out the [plot gallery](https://applefy.readthedocs.io/en/latest/04_apples_with_apples/01_general.html)
 in the ``applefy`` documentation.
 
-## Authors
+## Authors and Citation
 All code was written by Markus J. Bonse, with additional contributions from 
-Timothy Gebhard.
+Timothy Gebhard. Detailed information on the citation can be found [here](https://applefy.readthedocs.io/en/latest/05_citation.html).
