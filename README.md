@@ -9,16 +9,15 @@ detection limits for exoplanet high contrast imaging (HCI) datasets.
 and robustness of contrast curve calculations. It implements the classical 
 approach based on the t-test (compare 
 [Mawet et al. 2014](https://arxiv.org/abs/1407.2247>)) as well as the parametric
-boostrap test for non-Gaussian residual noise (Bonse et al. subm.).
+boostrap test for non-Gaussian residual noise ([Bonse et al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....166...71B/abstract).
 
-Applefy has two main feature:
+Applefy has two main features:
 
 1. Compute contrast curves (see [documentation](https://applefy.readthedocs.io/en/latest/02_user_documentation/01_contrast_curves.html))
 2. Compute contrast grids (see [documentation](https://applefy.readthedocs.io/en/latest/02_user_documentation/02_contrast_grid.html))
 
 Further, this repository contains the code needed to reproduce the results of 
-our paper:
-> COMING SOON
+our paper, available [here](https://iopscience.iop.org/article/10.3847/1538-3881/acc93c/meta).
 
 ---
 
@@ -40,7 +39,7 @@ as well as on
 to use a [virtual environment](https://virtualenv.pypa.io/en/latest/) to install
 the package.
 
-Applefy can only be used together with a data post-processing libary
+Applefy can only be used together with a data post-processing library
 for high-contrast imaging data! The following packages are currently 
 supported:
 
@@ -125,6 +124,6 @@ LaplaceBootstrapTest.
 Check out the [plot gallery](https://applefy.readthedocs.io/en/latest/04_apples_with_apples/01_general.html)
 in the ``applefy`` documentation.
 
-## Authors
+## Authors and Citation
 All code was written by Markus J. Bonse, with additional contributions from 
-Timothy Gebhard.
+Timothy Gebhard. Detailed information on the citation can be found [here](https://applefy.readthedocs.io/en/latest/05_citation.html).

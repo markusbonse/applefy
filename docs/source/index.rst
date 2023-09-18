@@ -5,7 +5,7 @@ This is the documentation of ``applefy``, a Python package for calculating
 detection limits for exoplanet high contrast imaging (HCI) datasets. In this
 documentation, we explain the how to use the package and provide some guides to
 help you `get started <01_getting_started.rst>`_. We also provide the code to
-`reproduce the plots <04_apples_with_apples/01_general.rst>`_ in Bonse et al. (subm.).
+`reproduce the plots <04_apples_with_apples/01_general.rst>`_ in `Bonse et al. 2023 <https://ui.adsabs.harvard.edu/abs/2023AJ....166...71B/abstract>`_.
 
 We did our best to follow best practices for software development and
 document all important steps. However, the code is still experimental.
