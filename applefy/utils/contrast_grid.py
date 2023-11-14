@@ -4,7 +4,7 @@ to compute contrast grids is to use the class
 :meth:`~applefy.detections.contrast.Contrast` and not the util functions.
 """
 
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Union
 
 import multiprocessing
 from copy import deepcopy
@@ -16,11 +16,72 @@ from scipy.interpolate import interp1d
 from applefy.detections.uncertainty import compute_detection_uncertainty
 from applefy.statistics.general import TestInterface, fpf_2_gaussian_sigma
 from applefy.utils.photometry import AperturePhotometryMode, flux_ratio2mag, \
-    mag2flux_ratio
+    mag2flux_ratio, IterNoiseBySeparation, get_flux
+
+
+def _compute_detection_uncertainty_throughput(
+        fake_planet_residual: np.ndarray,
+        fp_residual: np.ndarray,
+        planet_position: Union[Tuple[float, float],
+                                     Tuple[float, float, float, float]],
+        separation: float,
+        statistical_test: TestInterface,
+        psf_fwhm_radius: float,
+        photometry_mode_planet: AperturePhotometryMode,
+        photometry_mode_noise: AperturePhotometryMode,
+        num_rot_iter: int = 20):
+    """
+    Function used in compute_contrast_grid to compute the fpf of all fake
+    planet residuals using multiprocessing. For more information about the
+    input parameters check the documentation of the main function.
+    """
+
+    # 1.) Estimate the flux of the planet without noise
+    # Note: This line assumes that a linear PSF-subtraction method was used
+    planet_signal_offset = fake_planet_residual - fp_residual
+
+    # sometimes negative self-subtraction wings are very close to the
+    # planet. In oder to remove this effect we set these values to 0
+    planet_signal_offset[planet_signal_offset < 0] = 0
+
+    # get the flux of the planet
+    _, planet_flux = get_flux(
+        planet_signal_offset,
+        planet_position[:2],
+        photometry_mode=photometry_mode_planet)
+
+    # 2.) Iterate over different noise positions
+    # iterate over the fp residual to get the noise
+    noise_iterator = IterNoiseBySeparation(
+        residual=fp_residual,
+        separation=separation,
+        psf_fwhm_radius=psf_fwhm_radius,
+        num_rot_iter=num_rot_iter,
+        photometry_mode=photometry_mode_noise,
+        max_rotation=360)
+
+    t_values = []
+    p_values = []
+    for rot_idx, tmp_observations in enumerate(noise_iterator):
+        tmp_noise_at_planet = tmp_observations[0]
+        tmp_noise_sample = tmp_observations[1:]
+
+        # add the planet flux to the noise at the position of the planet
+        tmp_planet_flux = tmp_noise_at_planet + planet_flux
+
+        # run the statistical test
+        test_result = statistical_test.test_2samp(
+            tmp_planet_flux, tmp_noise_sample)
+
+        p_values.append(test_result[0])
+        t_values.append(test_result[1])
+
+    return float(np.median(p_values)), np.array(p_values), np.array(t_values)
 
 
 def _compute_median_confidence(
         fake_planet_residuals: np.ndarray,
+        fp_residual: np.ndarray,
         fake_planet_positions: List[Tuple[float, float]],
         separation: float,
         flux_ratio: float,
@@ -41,15 +102,27 @@ def _compute_median_confidence(
     for i, tmp_fake_planet_residual in enumerate(fake_planet_residuals):
         tmp_planet_position = fake_planet_positions[i]
 
-        tmp_median_p, _, _ = compute_detection_uncertainty(
-            frame=tmp_fake_planet_residual,
-            planet_position=tmp_planet_position,
-            statistical_test=statistical_test,
-            psf_fwhm_radius=psf_fwhm_radius,
-            photometry_mode_planet=photometry_mode_planet,
-            photometry_mode_noise=photometry_mode_noise,
-            num_rot_iter=num_rot_iter,
-            safety_margin=safety_margin)
+        if safety_margin == -1:
+            tmp_median_p, _, _ = _compute_detection_uncertainty_throughput(
+                fake_planet_residual=tmp_fake_planet_residual,
+                fp_residual=fp_residual,
+                planet_position=tmp_planet_position,
+                separation=separation,
+                statistical_test=statistical_test,
+                psf_fwhm_radius=psf_fwhm_radius,
+                photometry_mode_planet=photometry_mode_planet,
+                photometry_mode_noise=photometry_mode_noise,
+                num_rot_iter=num_rot_iter)
+        else:
+            tmp_median_p, _, _ = compute_detection_uncertainty(
+                frame=tmp_fake_planet_residual,
+                planet_position=tmp_planet_position,
+                statistical_test=statistical_test,
+                psf_fwhm_radius=psf_fwhm_radius,
+                photometry_mode_planet=photometry_mode_planet,
+                photometry_mode_noise=photometry_mode_noise,
+                num_rot_iter=num_rot_iter,
+                safety_margin=safety_margin)
 
         all_p_values.append(tmp_median_p)
 
@@ -62,6 +135,7 @@ def compute_contrast_grid(
                           List[Tuple[np.ndarray,
                                      List[float]]]],
         idx_table: pd.DataFrame,
+        fp_residual: np.ndarray,
         statistical_test: TestInterface,
         psf_fwhm_radius: float,
         photometry_mode_planet: AperturePhotometryMode,
@@ -97,6 +171,9 @@ def compute_contrast_grid(
 
         idx_table: Pandas table which links separation and flux_ratio
             to its experiment ID as used by planet_dict.
+        fp_residual: Residual without the fake planet. This is used if
+            safety_margin is set to -1. In this case the noise is extracted
+            from the fp_residual instead of the fake planet residuals.
         statistical_test: The test used to constrain the planet flux
             needed to be counted as a detection.
             For the classical TTest (Gaussian noise) use an instance of
@@ -117,6 +194,8 @@ def compute_contrast_grid(
             noise values. See `Figure 02 <../04_apples_with_apples/paper_experiments/02_Rotation.ipynb>`_ for more information.
         safety_margin: Area around the planet [pixel] which is excluded from
             the noise. This can be useful in case the planet has negative wings.
+            Can be set to -1. In this case the noise is extracted from the
+            residual without the fake planet.
 
     Returns:
         The contrast grid containing p-values / fpf values as a pandas DataFrame.
@@ -135,6 +214,7 @@ def compute_contrast_grid(
 
             # save all parameters needed for multi-processing
             all_parallel_experiments.append((tmp_residuals,
+                                             fp_residual,
                                              tmp_planet_positions,
                                              tmp_separation,
                                              tmp_flux_ratio,

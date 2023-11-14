@@ -914,7 +914,8 @@ class ContrastResult:
                 for more information.
             safety_margin: Area around the planet [pixel] which is excluded from
                 the noise. This can be useful in case the planet has negative
-                wings.
+                wings. Can be set to -1. In this case the noise is extracted
+                from the residual without the fake planet.
             confidence_level_fpf: If set to a float value the output contrast
                 grid will be interpolated in order to obtain a contrast curve.
                 The value is the confidence level associated with the
@@ -934,6 +935,7 @@ class ContrastResult:
 
         contrast_grid = compute_contrast_grid(
             planet_dict=self.planet_dict,
+            fp_residual=self.fp_residual,
             idx_table=self.idx_table,
             statistical_test=statistical_test,
             psf_fwhm_radius=self.psf_fwhm_radius,
