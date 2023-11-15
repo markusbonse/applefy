@@ -630,7 +630,7 @@ class Contrast:
     def compute_contrast_grids(
             self,
             statistical_test: TestInterface,
-            confidence_level_fpf: float,
+            confidence_level_fpf: Optional[float] = None,
             num_cores: int = 1,
             safety_margin: float = 1.0,
             compute_snr_grid: bool = False,
