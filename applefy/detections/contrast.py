@@ -902,7 +902,7 @@ class ContrastResult:
             safety_margin: float = 1.0,
             compute_snr_grid: bool = False,
             confidence_level_fpf: Optional[float] = None
-    ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
+    ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], Tuple[pd.DataFrame, None]]:
         """
         Calculates the
         `contrast grid  <../02_user_documentation/02_contrast_grid.ipynb>`_ .
@@ -977,7 +977,7 @@ class ContrastResult:
 
             return contrast_grid, contrast_curve
 
-        return contrast_grid
+        return contrast_grid, None
 
 
 class DataReductionInterface(ABC):
