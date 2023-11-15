@@ -705,6 +705,7 @@ class Contrast:
                     statistical_test=statistical_test,
                     num_cores=num_cores,
                     num_rot_iter=num_rot_iter,
+                    compute_snr_grid=compute_snr_grid,
                     safety_margin=safety_margin,
                     confidence_level_fpf=confidence_level_fpf)
 
