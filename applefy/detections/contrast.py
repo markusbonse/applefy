@@ -633,9 +633,11 @@ class Contrast:
             confidence_level_fpf: float,
             num_cores: int = 1,
             safety_margin: float = 1.0,
+            compute_snr_grid: bool = False,
             num_rot_iter: int = 20,
             pixel_scale: Optional[float] = None
-    ) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    ) -> Union[Tuple[pd.DataFrame, Dict[str, pd.DataFrame]],
+               Dict[str, pd.DataFrame]]:
         """
         Calculates the
         `contrast grids <../02_user_documentation/02_contrast_grid.ipynb>`_.
@@ -659,10 +661,13 @@ class Contrast:
             num_cores: Number of parallel jobs used during multiprocessing.
             confidence_level_fpf: The confidence level associated with the
                 contrast curve as false-positive fraction (FPF).
-                See return values.
+                See return values. This option is only
+                available if compute_snr_grid is set to False.
             safety_margin: Area around the planet [pixel] which is excluded from
                 the noise. This can be useful in case the planet has negative
                 wings.
+            compute_snr_grid: If set to True the grid values contain the SNR
+                instead of the fpf.
             num_rot_iter: Number of tests performed with different positions of
                 the noise values. See
                 `Figure 10 <../04_apples_with_apples/paper_experiments/10_Rotation.ipynb>`_
@@ -674,6 +679,8 @@ class Contrast:
             1. A pandas DataFrame with the contrast curves obtained by
             thresholding the contrast grids. We report the median
             p-values over all num_rot_iter experiments performed.
+            If compute_snr_grid is set to True only the contrast grids are
+            returned.
 
             2. A dict with one contrast grid for each output of the
             post-processing routine. We report the median
@@ -703,18 +710,25 @@ class Contrast:
 
             # Convert the separation index to FWHM
             tmp_contrast_grid.columns = self._get_result_table_index()
-            contrast_curves[key] = tmp_contrast_grid_curve["contrast"].values
             contrast_grids[key] = tmp_contrast_grid
+
+            # if compute_snr_grid is set to True we don't have a contrast curve
+            if not compute_snr_grid:
+                contrast_curves[key] = \
+                    tmp_contrast_grid_curve["contrast"].values
 
         # 2.) merge the results of the contrast_curves into one nice table
         separation_index = self._get_result_table_index(pixel_scale)
 
         # create the final tables
-        pd_contrast_curves = pd.DataFrame(
-            contrast_curves, index=separation_index).replace(
-            [np.inf, -np.inf], np.inf)
+        if not compute_snr_grid:
+            pd_contrast_curves = pd.DataFrame(
+                contrast_curves, index=separation_index).replace(
+                [np.inf, -np.inf], np.inf)
 
-        return pd_contrast_curves, contrast_grids
+            return pd_contrast_curves, contrast_grids
+
+        return contrast_grids
 
 
 class ContrastResult:
@@ -886,6 +900,7 @@ class ContrastResult:
             num_cores: int = 1,
             num_rot_iter: int = 20,
             safety_margin: float = 1.0,
+            compute_snr_grid: bool = False,
             confidence_level_fpf: Optional[float] = None
     ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         """
@@ -916,11 +931,14 @@ class ContrastResult:
                 the noise. This can be useful in case the planet has negative
                 wings. Can be set to -1. In this case the noise is extracted
                 from the residual without the fake planet.
+            compute_snr_grid: If set to True the grid values contain the SNR
+                instead of the fpf.
             confidence_level_fpf: If set to a float value the output contrast
                 grid will be interpolated in order to obtain a contrast curve.
                 The value is the confidence level associated with the
                 contrast curve as false-positive fraction (FPF).
-                If None only the contrast grid is returned.
+                If None only the contrast grid is returned. This option is only
+                available if compute_snr_grid is set to False.
 
         Returns:
             1. A pandas DataFrame with the contrast grid. We report the median
@@ -929,7 +947,8 @@ class ContrastResult:
             2. A pandas DataFrame with the contrast curve obtained by
             thresholding the contrast grid. We report the median
             p-values over all num_rot_iter experiments performed. Only returned
-            if a confidence_level_fpf is given.
+            if a confidence_level_fpf is given and compute_snr_grid is set to
+            False.
 
         """
 
@@ -941,11 +960,16 @@ class ContrastResult:
             psf_fwhm_radius=self.psf_fwhm_radius,
             photometry_mode_planet=self.planet_mode,
             photometry_mode_noise=self.noise_mode,
+            compute_snr_grid=compute_snr_grid,
             num_cores=num_cores,
             num_rot_iter=num_rot_iter,
             safety_margin=safety_margin)
 
         if isinstance(confidence_level_fpf, (float, np.floating)):
+            if compute_snr_grid:
+                raise ValueError(
+                    "compute_snr_grid and confidence_level_fpf cannot be "
+                    "used at the same time.")
             # compute the contrast curve
             contrast_curve = compute_contrast_from_grid(
                 contrast_grid,

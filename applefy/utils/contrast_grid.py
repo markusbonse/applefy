@@ -89,6 +89,7 @@ def _compute_median_confidence(
         psf_fwhm_radius: float,
         photometry_mode_planet: AperturePhotometryMode,
         photometry_mode_noise: AperturePhotometryMode,
+        compute_snr_instead: bool = False,
         num_rot_iter: int = 20,
         safety_margin: float = 1.0
 ) -> Tuple[float, float, float]:
@@ -103,7 +104,7 @@ def _compute_median_confidence(
         tmp_planet_position = fake_planet_positions[i]
 
         if safety_margin == -1:
-            tmp_median_p, _, _ = _compute_detection_uncertainty_throughput(
+            tmp_median_p, _, tmp_t_values = _compute_detection_uncertainty_throughput(
                 fake_planet_residual=tmp_fake_planet_residual,
                 fp_residual=fp_residual,
                 planet_position=tmp_planet_position,
@@ -114,7 +115,7 @@ def _compute_median_confidence(
                 photometry_mode_noise=photometry_mode_noise,
                 num_rot_iter=num_rot_iter)
         else:
-            tmp_median_p, _, _ = compute_detection_uncertainty(
+            tmp_median_p, _, tmp_t_values = compute_detection_uncertainty(
                 frame=tmp_fake_planet_residual,
                 planet_position=tmp_planet_position,
                 statistical_test=statistical_test,
@@ -124,7 +125,10 @@ def _compute_median_confidence(
                 num_rot_iter=num_rot_iter,
                 safety_margin=safety_margin)
 
-        all_p_values.append(tmp_median_p)
+        if compute_snr_instead:
+            all_p_values.append(np.median(tmp_t_values))
+        else:
+            all_p_values.append(tmp_median_p)
 
     print(".", end='')
     return separation, flux_ratio, float(np.median(all_p_values))
@@ -140,6 +144,7 @@ def compute_contrast_grid(
         psf_fwhm_radius: float,
         photometry_mode_planet: AperturePhotometryMode,
         photometry_mode_noise: AperturePhotometryMode,
+        compute_snr_grid: bool = False,
         num_cores: int = 1,
         num_rot_iter: int = 20,
         safety_margin: float = 1.0
@@ -188,6 +193,8 @@ def compute_contrast_grid(
             defines how the flux is measured at the planet positions.
         photometry_mode_noise: An instance of AperturePhotometryMode which
             defines how the noise photometry is measured.
+        compute_snr_grid: If set to True the values of the grid will contain
+            the SNR i.e. value of the test statistic instead of the fpf.
         num_cores: Number of CPU cores used for a parallel computation of the
             grid values.
         num_rot_iter: Number of tests performed with different positions of the
@@ -199,8 +206,14 @@ def compute_contrast_grid(
 
     Returns:
         The contrast grid containing p-values / fpf values as a pandas DataFrame.
+        If compute_snr_grid is set to True the values of the grid will contain
+        the SNR i.e. value of the test statistic instead of the fpf.
 
     """
+    if compute_snr_grid:
+        output_tag = "SNR"
+    else:
+        output_tag = "fpf"
 
     # 1.) collect the data for multiprocessing
     all_parallel_experiments = []
@@ -222,6 +235,7 @@ def compute_contrast_grid(
                                              psf_fwhm_radius,
                                              photometry_mode_planet,
                                              photometry_mode_noise,
+                                             compute_snr_grid,
                                              num_rot_iter,
                                              safety_margin))
 
@@ -236,10 +250,10 @@ def compute_contrast_grid(
     results_combined = pd.DataFrame(np.array(mp_results),
                                     columns=["separation",
                                              "flux_ratio",
-                                             "fpf"])
+                                             output_tag])
 
     contrast_grid = results_combined.pivot_table(
-        values="fpf",
+        values=output_tag,
         index="separation",
         columns="flux_ratio").sort_index(
         axis=1, ascending=False).T
