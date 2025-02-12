@@ -236,9 +236,11 @@ def sort_fake_planet_results(
     # 3.) Build idx table from config information
     idx_table = pd.DataFrame(tmp_idx_to_sep_flux,
                              ["separation", "flux_ratio"]).T.reset_index()
-    idx_table = idx_table.pivot_table(values="index",
-                                      index="separation",
-                                      columns="flux_ratio")
+    idx_table = idx_table.pivot_table(
+        values="index",
+        index="separation",
+        columns="flux_ratio",
+        aggfunc="first")
 
     idx_table = idx_table.sort_index(axis=1, ascending=False).sort_index(axis=0)
 
