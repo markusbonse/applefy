@@ -203,8 +203,8 @@ def get_flux(
         best_idx = np.argmax(photometry_table["aperture_sum"])
         best_aperture_sum = photometry_table["aperture_sum"][best_idx]
         best_position = (
-            photometry_table["xcenter", "ycenter"][best_idx][0].value,
-            photometry_table["xcenter", "ycenter"][best_idx][1].value)
+            float(photometry_table["xcenter", "ycenter"][best_idx][0]),
+            float(photometry_table["xcenter", "ycenter"][best_idx][1]))
 
         return best_position, best_aperture_sum
 
